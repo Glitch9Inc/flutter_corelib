@@ -1,15 +1,21 @@
 name: flutter_corelib
 description: "A new Flutter package project."
 version: 0.0.1
-homepage:
+homepage: https://github.com/Glitch9Inc/flutter_corelib
 
 environment:
-  sdk: '>=3.3.4 <4.0.0'
+  sdk: ">=3.3.4 <4.0.0"
   flutter: ">=1.17.0"
 
 dependencies:
   flutter:
     sdk: flutter
+
+  # Localization
+  intl: ^0.18.1
+
+  # For PlayerPrefs (unity-style)
+  shared_preferences: ^2.0.8
 
 dev_dependencies:
   flutter_test:
