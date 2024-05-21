@@ -3,149 +3,149 @@ export 'issue_extensions.dart';
 
 enum Issue {
   // Fallback
-  @Message('An unknown error occurred.')
+  @LogMessage('An unknown error occurred.')
   unknownError,
 
-  // System - General Errors
-  @Message('Invalid operation attempted.')
+  // System - General Errorslist
+  @LogMessage('Invalid operation attempted.')
   invalidOperation,
-  @Message('Invalid argument provided.')
+  @LogMessage('Invalid argument provided.')
   invalidArgument,
-  @Message('Invalid format.')
+  @LogMessage('Invalid format.')
   invalidFormat,
 
   // System - File and IO Errors
-  @Message('File not found.')
+  @LogMessage('File not found.')
   fileNotFound,
-  @Message('File format is not supported.')
+  @LogMessage('File format is not supported.')
   fileFormatUnsupported,
-  @Message('File size is too large.')
+  @LogMessage('File size is too large.')
   fileSizeExceeded,
 
   // System - Resource Errors
-  @Message('Resource not found.')
+  @LogMessage('Resource not found.')
   resourceNotFound,
-  @Message('Resource already exists.')
+  @LogMessage('Resource already exists.')
   resourceAlreadyExists,
-  @Message('Resource is locked.')
+  @LogMessage('Resource is locked.')
   resourceLocked,
-  @Message('Resource state conflict.')
+  @LogMessage('Resource state conflict.')
   resourceStateConflict,
 
   // Network - General Errors / HTTP (API)
-  @Message('[400] Invalid request. Please check your input.')
+  @LogMessage('[400] Invalid request. Please check your input.')
   invalidRequest,
-  @Message('[401] You don\'t have permission to execute this operation.')
+  @LogMessage('[401] You don\'t have permission to execute this operation.')
   permissionDenied,
-  @Message('[402] Server is not available. Please try again later.')
+  @LogMessage('[402] Server is not available. Please try again later.')
   serviceUnavailable,
-  @Message('[403] Server is forbidden. Please check your access rights.')
+  @LogMessage('[403] Server is forbidden. Please check your access rights.')
   forbidden,
-  @Message('[404] Target endpoint is not available. Please check the URL.')
+  @LogMessage('[404] Target endpoint is not available. Please check the URL.')
   invalidEndpoint,
-  @Message('Request Failed.')
+  @LogMessage('Request Failed.')
   protocolError,
-  @Message('Request timeout.')
+  @LogMessage('Request timeout.')
   requestTimeout,
-  @Message('Please enter all required fields to send this request.')
+  @LogMessage('Please enter all required fields to send this request.')
   missingRequiredField,
-  @Message('Access has been denied.')
+  @LogMessage('Access has been denied.')
   unauthorizedAccess,
-  @Message('No internet connection. Please try again later.')
+  @LogMessage('No internet connection. Please try again later.')
   noInternet,
-  @Message('Network error occurred. Please try again later.')
+  @LogMessage('Network error occurred. Please try again later.')
   networkError, // Generic
-  @Message('Too many requests. Please try again later.')
+  @LogMessage('Too many requests. Please try again later.')
   tooManyRequests,
-  @Message('Batch operation Failed.')
+  @LogMessage('Batch operation Failed.')
   invalidBatchOperation,
-  @Message('There was an error while sending the request.')
+  @LogMessage('There was an error while sending the request.')
   sendFailed,
-  @Message('There was an error while receiving the response.')
+  @LogMessage('There was an error while receiving the response.')
   receiveFailed,
-  @Message('Request is not allowed by the server.')
+  @LogMessage('Request is not allowed by the server.')
   requestProhibitedByCachePolicy,
-  @Message('Request is not allowed by the server.')
+  @LogMessage('Request is not allowed by the server.')
   requestProhibitedByProxy,
-  @Message('A custom API error object was returned.')
+  @LogMessage('A custom API error object was returned.')
   errorObjectReturned,
 
   // Network - Validation and Format Errors
-  @Message('Server error occurred. Please try again later.')
+  @LogMessage('Server error occurred. Please try again later.')
   internalServerError,
-  @Message('Validation error occurred.')
+  @LogMessage('Validation error occurred.')
   validationError,
-  @Message('Response is empty.')
+  @LogMessage('Response is empty.')
   emptyResponse,
-  @Message('Response is malformed.')
+  @LogMessage('Response is malformed.')
   malformedResponse,
-  @Message('Data is out of range.')
+  @LogMessage('Data is out of range.')
   dataOutOfRange,
-  @Message('Data is duplicated.')
+  @LogMessage('Data is duplicated.')
   duplicateData,
 
   // Network - Authentication and Authorization Errors
-  @Message('Authentication Failed.')
+  @LogMessage('Authentication Failed.')
   authenticationFailed,
-  @Message('Invalid email address.')
+  @LogMessage('Invalid email address.')
   invalidEmail,
-  @Message('Invalid password.')
+  @LogMessage('Invalid password.')
   invalidPassword,
-  @Message('Invalid email or password.')
+  @LogMessage('Invalid email or password.')
   invalidEmailOrPassword,
-  @Message('Token is Expired.')
+  @LogMessage('Token is Expired.')
   tokenExpired,
-  @Message('Invalid token.')
+  @LogMessage('Invalid token.')
   tokenInvalid,
-  @Message('Session is Expired.')
+  @LogMessage('Session is Expired.')
   sessionExpired,
 
   // Conversion, Parsing and Serialization Errors
-  @Message('Conversion Failed.')
+  @LogMessage('Conversion Failed.')
   conversionFailed,
-  @Message('Parsing Failed.')
+  @LogMessage('Parsing Failed.')
   parsingFailed,
-  @Message('Serialization Failed.')
+  @LogMessage('Serialization Failed.')
   serializationFailed,
 
   // Game Errors
-  @Message('Content is not ready.')
+  @LogMessage('Content is not ready.')
   contentNotReady,
-  @Message('Invalid amount.')
+  @LogMessage('Invalid amount.')
   invalidAmount,
-  @Message('Your level is not high enough.')
+  @LogMessage('Your level is not high enough.')
   notEnoughLevel,
-  @Message('Invalid item.')
+  @LogMessage('Invalid item.')
   invalidItem,
-  @Message('Item is not found.')
+  @LogMessage('Item is not found.')
   missingItem,
-  @Message('Invalid content.')
+  @LogMessage('Invalid content.')
   invalidContent,
-  @Message('Content is not found.')
+  @LogMessage('Content is not found.')
   missingContent,
-  @Message('Invalid character.')
+  @LogMessage('Invalid character.')
   invalidCharacter,
-  @Message('Character is not found.')
+  @LogMessage('Character is not found.')
   missingCharacter,
-  @Message('Not enough energy.')
+  @LogMessage('Not enough energy.')
   insufficientEnergy,
-  @Message('Not enough stamina.')
+  @LogMessage('Not enough stamina.')
   insufficientStamina,
-  @Message('You don\'t have required materials.')
+  @LogMessage('You don\'t have required materials.')
   insufficientMaterials,
-  @Message('You don\'t have enough tokens.')
+  @LogMessage('You don\'t have enough tokens.')
   insufficientTokens,
-  @Message('You don\'t have enough currency.')
+  @LogMessage('You don\'t have enough currency.')
   insufficientCurrency,
-  @Message('You don\'t have season pass.')
+  @LogMessage('You don\'t have season pass.')
   noSeasonPass,
 
   // Glitch9 Internal (Uncomment if needed)
-  // @Message('You don\'t have enough Glitch9 credits.')
+  // @LogMessage('You don\'t have enough Glitch9 credits.')
   // insufficientWallet,
 }
 
-class Message {
+class LogMessage {
   final String text;
-  const Message(this.text);
+  const LogMessage(this.text);
 }

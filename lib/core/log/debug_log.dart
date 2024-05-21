@@ -1,6 +1,8 @@
 //유니티랑 비슷하게 디버그 로그를 출력하는 클래스
 import 'package:flutter/foundation.dart';
 
+export 'log_level.dart';
+
 enum LogType {
   info,
   warning,
@@ -13,6 +15,8 @@ class LogData {
   LogData(this.type, this.message);
 }
 
+@protected
+@immutable
 class Debug {
   // ANSI escape codes for terminal colors
   static const String _red = '\x1B[31m';

@@ -11,11 +11,9 @@ dependencies:
   flutter:
     sdk: flutter
 
-  # Localization
-  intl: ^0.18.1
-
-  # For PlayerPrefs (unity-style)
-  shared_preferences: ^2.0.8
+  intl: ^0.18.1 # Localization
+  shared_preferences: ^2.0.8 # For PlayerPrefs (unity-style)
+  assets_audio_player: ^3.1.1
 
 dev_dependencies:
   flutter_test:
