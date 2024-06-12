@@ -51,20 +51,20 @@ abstract class ObjectProvider<TObject> {
     return await create();
   }
 
-  Future<bool> delete(String id) async {
+  Future<Result> delete(String id) async {
     try {
       bool deleted = await deleteInternal(id);
       if (!deleted) {
         deleteController.add(false);
 
-        return false;
+        return Result.fail("$objectName($id) deletion failed.");
       }
 
       deleteController.add(true);
 
-      return true;
+      return Result.success("$objectName($id) deleted.");
     } catch (e) {
-      return false;
+      return Result.fail("$objectName($id) deletion failed. $e");
     }
   }
 
