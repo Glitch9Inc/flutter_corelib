@@ -1,5 +1,7 @@
-import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
+
+import 'package:flutter_corelib/flutter_corelib.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class Prefs<T> {
   static final Map<String, Prefs> _cache = {};
@@ -9,7 +11,7 @@ class Prefs<T> {
 
   Prefs._(this._prefsKey);
 
-  static Future<Prefs<T>> getInstance<T>(String key) async {
+  static Future<Prefs<T>> create<T>(String key) async {
     if (!_cache.containsKey(key)) {
       var prefs = Prefs<T>._(key);
       await prefs._init();
@@ -52,7 +54,7 @@ class Prefs<T> {
         try {
           _value = jsonDecode(jsonString) as T;
         } catch (e) {
-          print('Error decoding JSON: $e');
+          Debug.logError('Error decoding JSON: $e');
         }
       }
     }

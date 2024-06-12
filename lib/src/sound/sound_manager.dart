@@ -33,9 +33,9 @@ class SoundManager {
   late Prefs<double> _voiceVolume;
 
   Future<void> init() async {
-    _bgmVolume = await Prefs.getInstance<double>('bgmVolume');
-    _sfxVolume = await Prefs.getInstance<double>('sfxVolume');
-    _voiceVolume = await Prefs.getInstance<double>('voiceVolume');
+    _bgmVolume = await Prefs.create<double>('bgmVolume');
+    _sfxVolume = await Prefs.create<double>('sfxVolume');
+    _voiceVolume = await Prefs.create<double>('voiceVolume');
 
     setVolume(SoundType.bgm, _bgmVolume.value ?? _defaultVolume);
     setVolume(SoundType.sfx, _sfxVolume.value ?? _defaultVolume);
