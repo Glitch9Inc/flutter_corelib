@@ -1,5 +1,6 @@
-//유니티랑 비슷하게 디버그 로그를 출력하는 클래스
+// 유니티랑 비슷하게 디버그 로그를 출력하는 클래스
 // ignore_for_file: avoid_print
+import 'dart:developer' as dev;
 
 import 'package:flutter/foundation.dart';
 
@@ -107,12 +108,12 @@ class Debug {
   static void _printLog(String message, LogStyle style, bool stackTrace) {
     if (style == LogStyle.asciiArt) {
       String coloredMessage = _tintMessage(message, _blue);
-      print(_asciiTop);
-      print(_asciiMid + coloredMessage);
+      dev.log(_asciiTop);
+      dev.log(_asciiMid + coloredMessage);
       if (stackTrace) _printStackTrace(LogType.info, style);
-      print(_asciiBot);
+      dev.log(_asciiBot);
     } else {
-      print(message);
+      dev.log(message);
       if (stackTrace) _printStackTrace(LogType.info, style);
     }
   }
@@ -120,12 +121,12 @@ class Debug {
   static void _printWarning(String message, LogStyle style, bool stackTrace) {
     String coloredMessage = _tintMessage(message, _yellow);
     if (style == LogStyle.asciiArt) {
-      print(_asciiTop);
-      print(_asciiMid + coloredMessage);
+      dev.log(_asciiTop);
+      dev.log(_asciiMid + coloredMessage);
       if (stackTrace) _printStackTrace(LogType.warning, style);
-      print(_asciiBot);
+      dev.log(_asciiBot);
     } else {
-      print(coloredMessage);
+      dev.log(coloredMessage);
       if (stackTrace) _printStackTrace(LogType.warning, style);
     }
   }
@@ -133,12 +134,12 @@ class Debug {
   static void _printError(String message, LogStyle style, bool stackTrace) {
     String coloredMessage = _tintMessage(message, _red);
     if (style == LogStyle.asciiArt) {
-      print(_asciiTop);
-      print(_asciiMid + coloredMessage);
+      dev.log(_asciiTop);
+      dev.log(_asciiMid + coloredMessage);
       if (stackTrace) _printStackTrace(LogType.error, style);
-      print(_asciiBot);
+      dev.log(_asciiBot);
     } else {
-      print(coloredMessage);
+      dev.log(coloredMessage);
       if (stackTrace) _printStackTrace(LogType.error, style);
     }
   }
@@ -154,13 +155,13 @@ class Debug {
     String color = _getTintColor(type);
 
     if (style == LogStyle.asciiArt) {
-      print(_tintMessage('${_asciiMid}File: $fileName', color));
-      print(_tintMessage('${_asciiMid}Line: $lineNumber', color));
-      print(_tintMessage('${_asciiMid}Column: $columnNumber', color));
+      dev.log(_tintMessage('${_asciiMid}File: $fileName', color));
+      dev.log(_tintMessage('${_asciiMid}Line: $lineNumber', color));
+      dev.log(_tintMessage('${_asciiMid}Column: $columnNumber', color));
     } else {
-      print(_tintMessage('File: $fileName', color));
-      print(_tintMessage('Line: $lineNumber', color));
-      print(_tintMessage('Column: $columnNumber', color));
+      dev.log(_tintMessage('File: $fileName', color));
+      dev.log(_tintMessage('Line: $lineNumber', color));
+      dev.log(_tintMessage('Column: $columnNumber', color));
     }
   }
 
