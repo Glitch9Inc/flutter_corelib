@@ -7,14 +7,14 @@ class Result {
   bool isSuccess = false;
   bool get isFailure => !isSuccess;
 
-  Result._internal(this.isSuccess, this.message, this.failReason);
+  Result.protected(this.isSuccess, this.message, this.failReason);
 
   factory Result.success([String outputMessage = noMessage]) {
-    return Result._internal(true, outputMessage, unknownError);
+    return Result.protected(true, outputMessage, unknownError);
   }
 
   factory Result.fail([String failReason = unknownError]) {
-    return Result._internal(false, noMessage, failReason);
+    return Result.protected(false, noMessage, failReason);
   }
 }
 
@@ -22,7 +22,7 @@ class ResultObject<T> extends Result {
   T? value;
 
   ResultObject._internal(super.isSuccess, super.message, super.failReason, this.value)
-      : super._internal();
+      : super.protected();
 
   factory ResultObject.success(T value, [String outputMessage = noMessage]) {
     return ResultObject._internal(true, outputMessage, unknownError, value);
