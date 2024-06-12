@@ -17,9 +17,7 @@ abstract class ObjectProvider<TObject> {
   final String objectName;
   final Logger logger;
 
-  ObjectProvider()
-      : objectName = TObject.toString(),
-        logger = Logger("ObjectProvider<$TObject>");
+  ObjectProvider(this.logger) : objectName = TObject.toString();
 
   Future<TObject?> create() async {
     try {
