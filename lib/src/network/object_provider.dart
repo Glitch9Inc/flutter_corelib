@@ -16,9 +16,9 @@ abstract class ObjectProvider<TObject> {
   final String objectName;
   ObjectProvider() : objectName = TObject.toString();
 
-  Future<Result> create(List args) async {
+  Future<Result> create() async {
     try {
-      TObject obj = await createInternal(args);
+      TObject obj = await createInternal();
       if (obj == null) return Result.fail("$objectName creation failed.");
 
       createController.add(obj);
@@ -29,9 +29,9 @@ abstract class ObjectProvider<TObject> {
     }
   }
 
-  Future<Result> retrieve(String id, List args) async {
+  Future<Result> retrieve(String id) async {
     try {
-      TObject? obj = await retrieveInternal(id, args);
+      TObject? obj = await retrieveInternal(id);
       if (obj == null) return Result.fail("$objectName($id) not found.");
 
       retrieveController.add(obj);
@@ -42,18 +42,18 @@ abstract class ObjectProvider<TObject> {
     }
   }
 
-  Future<Result> retrieveOrCreate(String id, List args) async {
-    Result result = await retrieve(id, args);
+  Future<Result> retrieveOrCreate(String id) async {
+    Result result = await retrieve(id);
     if (result.isSuccess) return result;
     print("$objectName($id) retrieval failed. Creating new $objectName.");
-    await Future.delayed(Duration(milliseconds: MIN_INTERNAL_OPERATION_MILLIS));
+    await Future.delayed(const Duration(milliseconds: MIN_INTERNAL_OPERATION_MILLIS));
 
-    return await create(args);
+    return await create();
   }
 
-  Future<bool> delete(String id, List args) async {
+  Future<bool> delete(String id) async {
     try {
-      bool deleted = await deleteInternal(id, args);
+      bool deleted = await deleteInternal(id);
       if (!deleted) {
         deleteController.add(false);
 
@@ -68,7 +68,7 @@ abstract class ObjectProvider<TObject> {
     }
   }
 
-  Future<TObject> createInternal(List args);
-  Future<TObject?> retrieveInternal(String id, List args);
-  Future<bool> deleteInternal(String id, List args);
+  Future<TObject> createInternal();
+  Future<TObject?> retrieveInternal(String id);
+  Future<bool> deleteInternal(String id);
 }
