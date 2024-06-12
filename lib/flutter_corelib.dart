@@ -10,6 +10,8 @@ export 'src/logger/logger.dart';
 export 'src/network/object_provider.dart';
 export 'src/prefs/playerprefs.dart';
 export 'src/prefs/prefs.dart';
+export 'src/prefs/prefs_list.dart';
+export 'src/prefs/prefs_map.dart';
 export 'src/result/result.dart';
 export 'src/sound/sound_manager.dart';
 export 'src/transition/transition_utils.dart';
