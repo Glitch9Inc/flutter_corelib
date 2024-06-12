@@ -1,13 +1,17 @@
 import 'dart:async';
 
-import 'result.dart';
+import '../result/result.dart';
 
 abstract class ObjectProvider<TObject> {
   static const int MIN_INTERNAL_OPERATION_MILLIS = 100;
 
-  StreamController<TObject> onCreate = StreamController<TObject>.broadcast();
-  StreamController<TObject> onRetrieve = StreamController<TObject>.broadcast();
-  StreamController<bool> onDelete = StreamController<bool>.broadcast();
+  final createController = StreamController<TObject>.broadcast();
+  final retrieveController = StreamController<TObject>.broadcast();
+  final deleteController = StreamController<bool>.broadcast();
+
+  get onCreate => createController.stream;
+  get onRetrieve => retrieveController.stream;
+  get onDelete => deleteController.stream;
 
   final String objectName;
   ObjectProvider() : objectName = TObject.toString();
@@ -17,7 +21,7 @@ abstract class ObjectProvider<TObject> {
       TObject obj = await createInternal(args);
       if (obj == null) return Result.fail("$objectName creation failed.");
 
-      onCreate.add(obj);
+      createController.add(obj);
 
       return ResultObject<TObject>.success(obj);
     } catch (e) {
@@ -30,7 +34,7 @@ abstract class ObjectProvider<TObject> {
       TObject? obj = await retrieveInternal(id, args);
       if (obj == null) return Result.fail("$objectName($id) not found.");
 
-      onRetrieve.add(obj);
+      retrieveController.add(obj);
 
       return ResultObject<TObject>.success(obj);
     } catch (e) {
@@ -51,12 +55,12 @@ abstract class ObjectProvider<TObject> {
     try {
       bool deleted = await deleteInternal(id, args);
       if (!deleted) {
-        onDelete.add(false);
+        deleteController.add(false);
 
         return false;
       }
 
-      onDelete.add(true);
+      deleteController.add(true);
 
       return true;
     } catch (e) {

@@ -20,8 +20,8 @@ class ResultObject<T> extends Result {
   T? value;
 
   ResultObject();
-  ResultObject._internal(bool isSuccess, String? message, String? failReason, this.value)
-      : super._internal(isSuccess, message, failReason);
+  ResultObject._internal(super.isSuccess, super.message, super.failReason, this.value)
+      : super._internal();
 
   factory ResultObject.success(T value, [String? outputMessage]) {
     return ResultObject._internal(true, outputMessage, null, value);
