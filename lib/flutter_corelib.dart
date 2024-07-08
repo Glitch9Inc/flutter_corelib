@@ -8,6 +8,7 @@ export 'src/extensions/string_ext.dart';
 export 'src/logger/debug_log.dart';
 export 'src/logger/logger.dart';
 export 'src/network/object_provider.dart';
+export 'src/network/string_or.dart';
 export 'src/prefs/playerprefs.dart';
 export 'src/prefs/prefs.dart';
 export 'src/prefs/prefs_list.dart';
