@@ -1,7 +1,17 @@
 class LogSettings {
-  bool enabled = true;
-  bool showRequestHeaders = false;
-  bool showRequestBody = false;
-  bool showResponseBody = false;
-  bool hideEmptyBody = true;
+  bool enabled;
+  bool showRequestHeaders;
+  bool showRequestBody;
+  bool showResponseBody;
+  bool hideEmptyBody;
+  bool showRedirections;
+
+  LogSettings({
+    this.enabled = true,
+    this.showRequestHeaders = false,
+    this.showRequestBody = false,
+    this.showResponseBody = false,
+    this.hideEmptyBody = true,
+    this.showRedirections = false,
+  });
 }

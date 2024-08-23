@@ -1,9 +1,13 @@
 import 'dart:io' as io;
 
 import 'package:flutter_corelib/flutter_corelib.dart';
-import 'package:http/http.dart' as http;
 import 'package:flutter/services.dart';
+import 'package:flutter_corelib/system/io/file_location.dart';
 import 'package:just_audio/just_audio.dart';
+import 'package:dio/dio.dart';
+
+import 'audio_type.dart';
+export 'audio_type.dart';
 
 class AudioFile {
   static const int fileTooSmallKb = 50;
@@ -13,21 +17,17 @@ class AudioFile {
   final AudioType type;
   final AudioPlayer player;
 
-  AudioFile(
-      {required this.location,
-      required this.path,
-      required this.type,
-      this.downloadUrl})
+  AudioFile({required this.location, required this.path, required this.type, this.downloadUrl})
       : player = getAudioPlayer(type);
 
   static AudioPlayer getAudioPlayer(AudioType type) {
     switch (type) {
       case AudioType.bgm:
-        return SoundManager.bgm;
+        return AudioManager.bgm;
       case AudioType.sfx:
-        return SoundManager.sfx;
+        return AudioManager.sfx;
       case AudioType.voice:
-        return SoundManager.voice;
+        return AudioManager.voice;
     }
   }
 
@@ -54,10 +54,7 @@ class AudioFile {
     if (path.isEmpty) throw Exception('Path is empty');
     switch (location) {
       case FileLocation.assets:
-        return await rootBundle
-            .load(path)
-            .then((value) => true)
-            .catchError((e) => false);
+        return await rootBundle.load(path).then((value) => true).catchError((e) => false);
       case FileLocation.file:
         bool exists = await io.File(path).exists();
         if (!exists && downloadUrl != null) {
@@ -74,11 +71,11 @@ class AudioFile {
   Future<bool> _downloadFile() async {
     if (downloadUrl.isNullOrEmpty) return false;
 
+    final Dio dio = Dio();
+
     try {
-      final io.Directory persistentDataPath =
-          await getApplicationDocumentsDirectory();
-      final io.Directory downloadDir =
-          io.Directory('${persistentDataPath.path}/$path');
+      final io.Directory persistentDataPath = await getApplicationDocumentsDirectory();
+      final io.Directory downloadDir = io.Directory('${persistentDataPath.path}/$path');
       if (!downloadDir.existsSync()) {
         downloadDir.createSync(recursive: true);
       }
@@ -86,9 +83,6 @@ class AudioFile {
       final io.File file = io.File('${downloadDir.path}/$path');
 
       if (file.existsSync()) {
-        // check if the file is too small.
-        // if it's too small, it means it's a corrupted file. (probably disconnected during download)
-        // so delete it if it's too small.
         final int fileSize = await file.length();
         if (fileSize < fileTooSmallKb) {
           file.deleteSync();
@@ -97,12 +91,20 @@ class AudioFile {
         }
       }
 
-      final response = await http.get(Uri.parse(downloadUrl!));
+      final String filePath = '${downloadDir.path}/$path';
+
+      final Response response = await dio.download(
+        downloadUrl!,
+        filePath,
+        onReceiveProgress: (received, total) {
+          if (total != -1) {
+            // Progress update (optional)
+            print('${(received / total * 100).toStringAsFixed(0)}%');
+          }
+        },
+      );
+
       if (response.statusCode == 200) {
-        final persistentDataPath = await getApplicationDocumentsDirectory();
-        final filePath = '${persistentDataPath.path}/${path}';
-        final file = io.File(filePath);
-        await file.writeAsBytes(response.bodyBytes);
         return true;
       } else {
         return false;

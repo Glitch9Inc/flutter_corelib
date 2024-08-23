@@ -12,6 +12,18 @@ extension TimeOfDayExt on TimeOfDay {
   String toFirestoreString() {
     return '${hour.toString().padLeft(2, '0')}:${minute.toString().padLeft(2, '0')}';
   }
+
+  TimeOfDay add(Duration duration) {
+    final newMinute = minute + duration.inMinutes;
+    final newHour = hour + newMinute ~/ 60;
+    return TimeOfDay(hour: newHour % 24, minute: newMinute % 60);
+  }
+
+  TimeOfDay subtract(Duration duration) {
+    final newMinute = minute - duration.inMinutes;
+    final newHour = hour + newMinute ~/ 60;
+    return TimeOfDay(hour: newHour % 24, minute: newMinute % 60);
+  }
 }
 
 extension TimeOfDayStringExt on String {

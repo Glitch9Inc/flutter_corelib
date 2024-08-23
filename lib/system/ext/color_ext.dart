@@ -1,6 +1,7 @@
 import 'dart:math';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_corelib/flutter_corelib.dart';
 
 extension ColorExt on Color {
   Color get light {
@@ -47,59 +48,52 @@ extension ColorExt on Color {
   /// 0.0: 원래 색상
   /// 1.0: 완전 백
   Color brighten(double factor) {
-    if (factor == 0) return this;
-    if (factor == 1) return Colors.white;
-    if (factor < 0 || factor > 1) {
-      print('factor must be between 0.0 and 1.0');
-      factor = factor.clamp(0.0, 1.0);
-    }
-    return Color.fromARGB(
-      alpha,
-      (red + (255 - red) * factor).round(),
-      (green + (255 - green) * factor).round(),
-      (blue + (255 - blue) * factor).round(),
-    );
+    assert(factor >= 0 && factor <= 1);
+
+    HSLColor hsl = HSLColor.fromColor(this);
+    double lightness = (hsl.lightness + factor).clamp(0.0, 1.0);
+
+    return hsl.withLightness(lightness).toColor();
   }
 
   /// factor: 0.0 ~ 1.0
   /// 0.0: 원래 색상
   /// 1.0: 완전 흑
   Color darken(double factor) {
-    if (factor == 0) return this;
-    if (factor == 1) return Colors.black;
-    if (factor < 0 || factor > 1) {
-      print('factor must be between 0.0 and 1.0');
-      factor = factor.clamp(0.0, 1.0);
-    }
+    assert(factor >= 0 && factor <= 1);
 
-    factor = 1 - factor;
+    HSLColor hsl = HSLColor.fromColor(this);
+    double lightness = (hsl.lightness - factor).clamp(0.0, 1.0);
 
-    return Color.fromARGB(
-      alpha,
-      (red * factor).round(),
-      (green * factor).round(),
-      (blue * factor).round(),
-    );
+    return hsl.withLightness(lightness).toColor();
   }
 
   Color saturate(double factor) {
     assert(factor >= 0 && factor <= 1);
-    return Color.fromARGB(
-      alpha,
-      (red + (255 - red) * factor).round(),
-      (green + (255 - green) * factor).round(),
-      (blue + (255 - blue) * factor).round(),
-    );
+
+    // RGB to HSL 변환
+    List<double> hsl = ColorUtil.rgbToHsl(red, green, blue);
+    double h = hsl[0], s = hsl[1], l = hsl[2];
+
+    // 채도 증가
+    s = s + (1 - s) * factor;
+
+    // HSL을 다시 RGB로 변환
+    return ColorUtil.hslToRgb(h, s, l, alpha);
   }
 
   Color desaturate(double factor) {
     assert(factor >= 0 && factor <= 1);
-    return Color.fromARGB(
-      alpha,
-      (red + (128 - red) * factor).round(),
-      (green + (128 - green) * factor).round(),
-      (blue + (128 - blue) * factor).round(),
-    );
+
+    // RGB to HSL 변환
+    List<double> hsl = ColorUtil.rgbToHsl(red, green, blue);
+    double h = hsl[0], s = hsl[1], l = hsl[2];
+
+    // 채도 줄이기
+    s = s * (1 - factor);
+
+    // HSL을 다시 RGB로 변환
+    return ColorUtil.hslToRgb(h, s, l, alpha);
   }
 
   /// hueBias: 색상 편향 (R쪽으로 0.0, G쪽으로 0.5, B쪽으로 1.0)
@@ -182,5 +176,14 @@ extension ColorExt on Color {
     const double saturateFactor = 0;
     const double brightenFactor = .5;
     return brighten(brightenFactor).saturate(saturateFactor);
+  }
+
+  Color complementary() {
+    return Color.fromARGB(
+      alpha,
+      255 - red,
+      255 - green,
+      255 - blue,
+    );
   }
 }
