@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:flutter_corelib/flutter_corelib.dart';
 import 'package:just_audio/just_audio.dart';
 
@@ -13,10 +15,10 @@ enum AudioType {
 enum FileLocation {
   assets,
   file,
-  network,
+  http,
 }
 
-class SoundManager {
+class SoundManager extends GetxController {
   SoundManager._internal();
   static final SoundManager _instance = SoundManager._internal();
   factory SoundManager() => _instance;
@@ -33,6 +35,15 @@ class SoundManager {
   late Prefs<double> _bgmVolume;
   late Prefs<double> _sfxVolume;
   late Prefs<double> _voiceVolume;
+
+  String? currentBgm;
+  String? currentSfx;
+  String? currentVoice;
+
+  final RxBool _isBgmSession = false.obs;
+  final RxBool _isBgmPlaying = false.obs;
+  static RxBool get isBgmSession => _instance._isBgmSession;
+  static RxBool get isBgmPlaying => _instance._isBgmPlaying;
 
   static Future<void> init() async {
     _instance._bgmVolume = await Prefs.create<double>('bgmVolume');
@@ -81,28 +92,85 @@ class SoundManager {
   }
 
   /// 사운드 파일명(확장자 포함)을 인자로 받아 사운드를 재생합니다.
-  static void play(AudioType type, String sound) async {
+  static void play(FileLocation location, AudioType type, String sound) async {
     _instance._logger.info('SoundManager.play: $sound ($type)');
-
     if (!sound.contains('.')) sound += _defaultExtension;
-    bool loop = type == AudioType.bgm;
+
+    bool forceLoop = false;
+
+    switch (type) {
+      case AudioType.bgm:
+        _instance.currentBgm = sound;
+        forceLoop = true;
+        isBgmSession.value = true;
+        isBgmPlaying.value = true;
+        break;
+      case AudioType.sfx:
+        _instance.currentSfx = sound;
+        break;
+      case AudioType.voice:
+        _instance.currentVoice = sound;
+        break;
+    }
 
     try {
-      await _instance.getPlayer(type).setAsset("$sound");
-      _instance.getPlayer(type).setLoopMode(loop ? LoopMode.one : LoopMode.off);
+      if (location == FileLocation.file) {
+        await _instance.getPlayer(type).setFilePath(sound);
+      } else if (location == FileLocation.http) {
+        await _instance.getPlayer(type).setUrl(sound);
+      } else {
+        await _instance.getPlayer(type).setAsset(sound);
+      }
+      _instance.getPlayer(type).setLoopMode(forceLoop ? LoopMode.one : LoopMode.off);
       _instance.getPlayer(type).play();
     } catch (e) {
       _instance._logger.severe('Error playing sound: $e');
+      isBgmSession.value = false;
     }
   }
 
-  static void playBgm(String sound) => play(AudioType.bgm, sound);
-  static void playSfx(String sound) => play(AudioType.sfx, sound);
-  static void playVoice(String sound) => play(AudioType.voice, sound);
+  static void playBgmAsset(String sound) => play(FileLocation.assets, AudioType.bgm, sound);
+  static void playSfxAsset(String sound) => play(FileLocation.assets, AudioType.sfx, sound);
+  static void playVoiceAsset(String sound) => play(FileLocation.assets, AudioType.voice, sound);
 
+  static void playBgmFile(String sound) => play(FileLocation.file, AudioType.bgm, sound);
+  static void playSfxFile(String sound) => play(FileLocation.file, AudioType.sfx, sound);
+  static void playVoiceFile(String sound) => play(FileLocation.file, AudioType.voice, sound);
+
+  static void playBgmHttp(String sound) => play(FileLocation.http, AudioType.bgm, sound);
+  static void playSfxHttp(String sound) => play(FileLocation.http, AudioType.sfx, sound);
+  static void playVoiceHttp(String sound) => play(FileLocation.http, AudioType.voice, sound);
+
+  static void stop(AudioType type, {bool reset = true}) {
+    _instance.getPlayer(type).stop();
+    isBgmPlaying.value = false;
+    if (reset) {
+      isBgmSession.value = false;
+    }
+  }
+
+  static void stopBgm({bool reset = true}) => stop(AudioType.bgm, reset: reset);
+  static void stopSfx() => stop(AudioType.sfx);
+  static void stopVoice() => stop(AudioType.voice);
+
+  static void toggleBgm() {
+    bool playing = _instance.bgmPlayer.playing;
+    if (playing) {
+      stopBgm(reset: false);
+    } else {
+      if (_instance.currentBgm != null) {
+        playBgmAsset(_instance.currentBgm!);
+      } else {
+        _instance._logger.warning('Current BGM is null');
+      }
+    }
+  }
+
+  @override
   void dispose() {
     bgmPlayer.dispose();
     sfxPlayer.dispose();
     voicePlayer.dispose();
+    super.dispose();
   }
 }

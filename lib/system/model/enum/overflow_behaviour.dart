@@ -1,0 +1,4 @@
+enum OverflowBehavior {
+  scroll,
+  wrap,
+}

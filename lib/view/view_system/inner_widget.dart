@@ -1,13 +1,17 @@
 import 'package:flutter/material.dart';
 
 abstract class InnerWidget extends StatelessWidget {
-  final String title;
+  abstract final String title;
   final bool showCloseButton;
-  final Widget? backgroundEffect;
+  final bool hasHeader;
+  final Color? backgroundColor;
+  final Widget? button;
 
-  const InnerWidget(
-      {super.key,
-      required this.title,
-      this.backgroundEffect = null,
-      this.showCloseButton = true});
+  const InnerWidget({
+    super.key,
+    this.showCloseButton = true,
+    this.hasHeader = true,
+    this.backgroundColor,
+    this.button,
+  });
 }

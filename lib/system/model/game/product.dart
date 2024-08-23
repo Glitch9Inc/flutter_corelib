@@ -9,10 +9,6 @@ class Product {
   final bool inAppPurchase;
   final String inAppPurchaseId;
 
-  final Future<void> Function(Product) onPurchase =
-      ProductManager.purchaseProduct;
-  final Future<String> Function(Product) onGetPrice = ProductManager.getPrice;
-
   const Product({
     required this.image,
     required this.name,
@@ -23,11 +19,31 @@ class Product {
     this.inAppPurchaseId = '',
   });
 
-  Future<void> purchase() async {
-    await onPurchase(this);
+  Future<Result<void>> purchase() async {
+    if (inAppPurchase) {
+      InAppPurchaseController iapController = Get.find();
+      try {
+        await iapController.buyProduct(inAppPurchaseId);
+        return Result.successVoid();
+      } catch (e) {
+        return Result.fail(e.toString());
+      }
+    } else {
+      try {
+        //ViewManager.purchaseConfirmationDialog(product);
+        return Result.successVoid();
+      } catch (e) {
+        return Result.fail(e.toString());
+      }
+    }
   }
 
   Future<String> getPrice() async {
-    return await onGetPrice(this);
+    if (inAppPurchase) {
+      InAppPurchaseController iapController = Get.find();
+      return iapController.getPrice(inAppPurchaseId);
+    } else {
+      return 'error';
+    }
   }
 }

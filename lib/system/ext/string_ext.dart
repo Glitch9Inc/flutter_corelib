@@ -34,7 +34,7 @@ extension StringExt on String {
 
   // pascal 케이스를 스네이크 케이스로 변환
   String toSnakeCase() {
-    return this.replaceAllMapped(RegExp(r'[A-Z]'), (match) {
+    return replaceAllMapped(RegExp(r'[A-Z]'), (match) {
       return '_${match.group(0)!.toLowerCase()}';
     });
   }
@@ -47,5 +47,9 @@ extension StringExt on String {
     } catch (e) {
       return false;
     }
+  }
+
+  int toInt() {
+    return int.parse(this);
   }
 }

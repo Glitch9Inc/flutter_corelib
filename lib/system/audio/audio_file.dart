@@ -1,13 +1,12 @@
-import 'dart:io';
+import 'dart:io' as io;
 
+import 'package:flutter_corelib/flutter_corelib.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter/services.dart';
 import 'package:just_audio/just_audio.dart';
-import 'package:path_provider/path_provider.dart';
-
-import 'sound_manager.dart';
 
 class AudioFile {
+  static const int fileTooSmallKb = 50;
   final FileLocation location;
   final String path;
   final String? downloadUrl;
@@ -41,7 +40,7 @@ class AudioFile {
       case FileLocation.file:
         await player.setFilePath(path);
         break;
-      case FileLocation.network:
+      case FileLocation.http:
         await player.setUrl(path);
     }
     await player.play();
@@ -60,35 +59,58 @@ class AudioFile {
             .then((value) => true)
             .catchError((e) => false);
       case FileLocation.file:
-        bool exists = await File(path).exists();
+        bool exists = await io.File(path).exists();
         if (!exists && downloadUrl != null) {
           exists = await _downloadFile();
         }
         return exists;
 
-      case FileLocation.network:
+      case FileLocation.http:
         // TODO: Implement network file check
         return true;
     }
   }
 
   Future<bool> _downloadFile() async {
-    if (downloadUrl == null) return false;
+    if (downloadUrl.isNullOrEmpty) return false;
 
     try {
+      final io.Directory persistentDataPath =
+          await getApplicationDocumentsDirectory();
+      final io.Directory downloadDir =
+          io.Directory('${persistentDataPath.path}/$path');
+      if (!downloadDir.existsSync()) {
+        downloadDir.createSync(recursive: true);
+      }
+
+      final io.File file = io.File('${downloadDir.path}/$path');
+
+      if (file.existsSync()) {
+        // check if the file is too small.
+        // if it's too small, it means it's a corrupted file. (probably disconnected during download)
+        // so delete it if it's too small.
+        final int fileSize = await file.length();
+        if (fileSize < fileTooSmallKb) {
+          file.deleteSync();
+        } else {
+          return true;
+        }
+      }
+
       final response = await http.get(Uri.parse(downloadUrl!));
       if (response.statusCode == 200) {
-        final directory = await getApplicationDocumentsDirectory();
-        final filePath = '${directory.path}/${path.split('/').last}';
-        final file = File(filePath);
+        final persistentDataPath = await getApplicationDocumentsDirectory();
+        final filePath = '${persistentDataPath.path}/${path}';
+        final file = io.File(filePath);
         await file.writeAsBytes(response.bodyBytes);
         return true;
       } else {
         return false;
       }
     } catch (e) {
-      print('Error downloading file: $e');
-      return false;
+      printError(info: 'Error downloading file: $e');
     }
+
+    return false;
   }
 }

@@ -1,7 +1,5 @@
 import 'dart:async';
-
 import 'package:flutter_corelib/flutter_corelib.dart';
-import 'package:logging/logging.dart';
 
 abstract class ObjectProvider<TObject> {
   // ignore: constant_identifier_names
@@ -30,8 +28,7 @@ abstract class ObjectProvider<TObject> {
       }
 
       if (result is! Result<TObject>) {
-        logger.severe(
-            "Invalid result type. Expected ResultObject<$TObject> but got $result.");
+        logger.severe("Invalid result type. Expected ResultObject<$TObject> but got $result.");
         return null;
       }
 
@@ -50,7 +47,7 @@ abstract class ObjectProvider<TObject> {
     }
   }
 
-  Future<TObject?> retrieve(String id) async {
+  Future<TObject?> retrieve(String id, {bool surpressWarning = false}) async {
     logger.info("Retrieving '$objectName($id)'...");
     try {
       Result result = await retrieveInternal(id);
@@ -60,15 +57,14 @@ abstract class ObjectProvider<TObject> {
       }
 
       if (result is! Result<TObject>) {
-        logger.severe(
-            "Invalid result type. Expected ResultObject<$TObject> but got $result.");
+        if (!surpressWarning) logger.severe("Invalid result type. Expected ResultObject<$TObject> but got $result.");
         return null;
       }
 
       TObject? obj = result.data;
 
       if (obj == null) {
-        logger.severe("'$objectName($id)' retrieval failed. $result");
+        if (!surpressWarning) logger.severe("'$objectName($id)' retrieval failed. $result");
         return null;
       }
 
@@ -76,14 +72,17 @@ abstract class ObjectProvider<TObject> {
 
       return obj;
     } catch (e, stackTrace) {
-      logger.severe("'$objectName($id)' retrieval failed. $e");
-      logger.severe(stackTrace.toString());
+      if (!surpressWarning) {
+        logger.severe("'$objectName($id)' retrieval failed. $e");
+        logger.severe(stackTrace.toString());
+      }
+
       return null;
     }
   }
 
   Future<TObject?> retrieveOrCreate(String id) async {
-    TObject? obj = await retrieve(id);
+    TObject? obj = await retrieve(id, surpressWarning: true);
     if (obj != null) {
       return obj;
     }
@@ -119,8 +118,7 @@ abstract class ObjectProvider<TObject> {
       }
 
       if (result is! Result<List<TObject>>) {
-        logger.severe(
-            "Invalid result type. Expected ResultObject<List<$TObject>> but got $result.");
+        logger.severe("Invalid result type. Expected ResultObject<List<$TObject>> but got $result.");
         return [];
       }
 

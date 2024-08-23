@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_corelib/flutter_corelib.dart';
 
 class PageIndicator extends StatefulWidget {
   final int count;
@@ -6,21 +7,26 @@ class PageIndicator extends StatefulWidget {
   final Color activeColor;
   final Color inactiveColor;
   final double size;
+  final double focusSize;
   final double space;
   final BoxDecoration? decoration;
+  final List<Dot>? customDots;
+  final EdgeInsetsGeometry padding;
   final Function(int)? onIndexChanged;
 
   const PageIndicator(
-      {Key? key,
+      {super.key,
       required this.count,
       required this.currentIndex,
       this.decoration,
       this.size = 10,
+      this.focusSize = 10,
       this.space = 5,
+      this.padding = const EdgeInsets.all(15),
       this.activeColor = Colors.white,
       this.inactiveColor = Colors.grey,
-      this.onIndexChanged})
-      : super(key: key);
+      this.customDots,
+      this.onIndexChanged});
 
   @override
   State<StatefulWidget> createState() => PageIndicatorState();
@@ -28,6 +34,7 @@ class PageIndicator extends StatefulWidget {
 
 class PageIndicatorState extends State<PageIndicator> {
   late int currentIndex;
+
   @override
   void initState() {
     super.initState();
@@ -42,16 +49,30 @@ class PageIndicatorState extends State<PageIndicator> {
     }
   }
 
-  Container _buildDotContainer(int index) {
-    return Container(
-        width: widget.size,
-        height: widget.size,
-        margin: EdgeInsets.symmetric(horizontal: widget.space),
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          color:
-              index == currentIndex ? widget.activeColor : widget.inactiveColor,
-        ));
+  AnimatedContainer _buildDotContainer(int index) {
+    bool focus = index == currentIndex;
+    double size = focus ? widget.focusSize : widget.size;
+    double iconSize = size * 0.7;
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeInOut,
+      width: size,
+      height: size,
+      margin: EdgeInsets.symmetric(horizontal: widget.space),
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: focus
+            ? (widget.customDots != null ? widget.customDots![index].color : widget.activeColor)
+            : widget.inactiveColor,
+      ),
+      child: widget.customDots != null && widget.customDots![index].icon != null
+          ? Icon(
+              widget.customDots![index].icon,
+              size: iconSize,
+              //color: focus ? widget.activeColor : widget.inactiveColor,
+            )
+          : null,
+    );
   }
 
   Widget _buildDot(int index) {
@@ -80,9 +101,14 @@ class PageIndicatorState extends State<PageIndicator> {
 
   @override
   Widget build(BuildContext context) {
+    double paddingLongerSide =
+        widget.padding.horizontal > widget.padding.vertical ? widget.padding.horizontal : widget.padding.vertical;
+    double fixedHeight = widget.focusSize + paddingLongerSide;
+
     if (widget.decoration != null) {
       return Container(
-        padding: const EdgeInsets.all(15),
+        height: fixedHeight,
+        padding: widget.padding,
         decoration: widget.decoration,
         child: _buildRow(),
       );

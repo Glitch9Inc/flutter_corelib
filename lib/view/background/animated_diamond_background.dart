@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_corelib/flutter_corelib.dart';
+import 'package:flutter_corelib/view/painter/diamond_painter.dart';
+import 'package:flutter_corelib/view/painter/heart_painter.dart';
 
 class AnimatedDiamondBackground extends StatefulWidget {
   final Color color;
@@ -9,31 +11,71 @@ class AnimatedDiamondBackground extends StatefulWidget {
   final BackgroundPanDirection direction;
 
   const AnimatedDiamondBackground({
-    Key? key,
+    super.key,
     required this.color,
     required this.backgroundColor,
     this.direction = BackgroundPanDirection.toBottomLeft,
     this.diamondHeight = 100,
     this.diamondWidth = 100,
-  }) : super(key: key);
+  });
 
   @override
-  _AnimatedDiamondBackgroundState createState() =>
-      _AnimatedDiamondBackgroundState();
+  AnimatedDiamondBackgroundState createState() => AnimatedDiamondBackgroundState();
 }
 
-class _AnimatedDiamondBackgroundState extends State<AnimatedDiamondBackground>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
+class AnimatedDiamondBackgroundState extends State<AnimatedDiamondBackground> with TickerProviderStateMixin {
+  late AnimationController _panController;
+  late AnimationController _colorController;
+  late Animation<Color?> _colorAnimation;
+  late Animation<Color?> _backgroundColorAnimation;
+
+  late Color color;
+  late Color backgroundColor;
 
   @override
   void initState() {
     super.initState();
+    color = widget.color;
+    backgroundColor = widget.backgroundColor;
 
-    _controller = AnimationController(
+    _panController = AnimationController(
       vsync: this,
-      duration: const Duration(seconds: 10),
+      duration: const Duration(seconds: 8),
     )..repeat();
+
+    _colorController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 1),
+    );
+
+    _colorAnimation = ColorTween(begin: color, end: color).animate(_colorController);
+    _backgroundColorAnimation = ColorTween(begin: backgroundColor, end: backgroundColor).animate(_colorController);
+
+    _colorController.addListener(() {
+      if (mounted) {
+        setState(() {
+          color = _colorAnimation.value!;
+          backgroundColor = _backgroundColorAnimation.value!;
+        });
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _panController.dispose();
+    _colorController.dispose();
+    super.dispose();
+  }
+
+  void changeColors(Color newColor, Color newBackgroundColor) {
+    if (mounted) {
+      _colorAnimation = ColorTween(begin: color, end: newColor).animate(_colorController);
+      _backgroundColorAnimation = ColorTween(begin: backgroundColor, end: newBackgroundColor).animate(_colorController);
+
+      _colorController.reset();
+      _colorController.forward();
+    }
   }
 
   Offset _getOffset(double value) {
@@ -53,17 +95,16 @@ class _AnimatedDiamondBackgroundState extends State<AnimatedDiamondBackground>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: widget.backgroundColor,
+      backgroundColor: backgroundColor,
       body: AnimatedBuilder(
-        animation: _controller,
+        animation: _panController,
         builder: (context, child) {
           return Stack(
             children: [
               for (double dx = -1.0; dx <= 1.0; dx++)
                 for (double dy = -1.0; dy <= 1.0; dy++)
                   Transform.translate(
-                    offset: _getOffset(_controller.value * 100) +
-                        Offset(dx * 100, dy * 100),
+                    offset: _getOffset(_panController.value * 100) + Offset(dx * 100, dy * 100),
                     child: child,
                   ),
             ],
@@ -71,67 +112,13 @@ class _AnimatedDiamondBackgroundState extends State<AnimatedDiamondBackground>
         },
         child: CustomPaint(
           painter: DiamondPainter(
-            color: widget.color,
-            diamondWidth: widget.diamondWidth,
-            diamondHeight: widget.diamondHeight,
+            color: color,
+            shapeWidth: widget.diamondWidth,
+            shapeHeight: widget.diamondHeight,
           ),
           size: Size.infinite,
         ),
       ),
     );
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-}
-
-class DiamondPainter extends CustomPainter {
-  final Color color;
-  final double diamondWidth;
-  final double diamondHeight;
-
-  DiamondPainter({
-    required this.color,
-    required this.diamondWidth,
-    required this.diamondHeight,
-  });
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()..style = PaintingStyle.fill;
-
-    for (double x = -diamondWidth;
-        x < size.width + diamondWidth;
-        x += diamondWidth) {
-      for (double y = -diamondHeight;
-          y < size.height + diamondHeight;
-          y += diamondHeight) {
-        final offset = Offset(x, y);
-
-        // 다이아몬드 그리기
-        _drawDiamond(canvas, offset, diamondWidth, diamondHeight, paint);
-      }
-    }
-  }
-
-  void _drawDiamond(
-      Canvas canvas, Offset offset, double width, double height, Paint paint) {
-    final path = Path()
-      ..moveTo(offset.dx + width / 2, offset.dy)
-      ..lineTo(offset.dx + width, offset.dy + height / 2)
-      ..lineTo(offset.dx + width / 2, offset.dy + height)
-      ..lineTo(offset.dx, offset.dy + height / 2)
-      ..close();
-
-    paint.color = color; // 모든 다이아몬드를 같은 색으로 칠함
-    canvas.drawPath(path, paint);
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) {
-    return true; // 애니메이션이 동작하도록 함
   }
 }

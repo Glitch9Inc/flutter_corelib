@@ -4,17 +4,17 @@ import 'package:flutter_corelib/flutter_corelib.dart';
 /// Only used for this project. Not recommended for general use.
 class FullScreenDialog extends StatefulWidget {
   final InnerWidget child;
+  final VoidCallback? onDismiss;
   final Widget? background;
-  const FullScreenDialog({super.key, required this.child, this.background});
+  const FullScreenDialog({super.key, required this.child, this.background, this.onDismiss});
 
   @override
-  _FullScreenDialogState createState() => _FullScreenDialogState();
+  State<FullScreenDialog> createState() => _FullScreenDialogState();
 }
 
 class _FullScreenDialogState extends State<FullScreenDialog> {
   Expanded _buildPopupTitle() {
-    TextAlign align =
-        widget.child.showCloseButton ? TextAlign.left : TextAlign.center;
+    TextAlign align = widget.child.showCloseButton ? TextAlign.left : TextAlign.center;
     return Expanded(
       child: Text(
         widget.child.title,
@@ -34,8 +34,13 @@ class _FullScreenDialogState extends State<FullScreenDialog> {
       ),
       child: Row(
         children: [
-          BackButton(),
+          BackButton(
+              onPressed: () => {
+                    widget.onDismiss?.call(),
+                    Get.back(),
+                  }),
           _buildPopupTitle(),
+          if (widget.child.button != null) widget.child.button!,
         ],
       ),
     );
@@ -58,13 +63,7 @@ class _FullScreenDialogState extends State<FullScreenDialog> {
     return EasyScaffold(
       background: widget.background,
       backgroundColor: Colors.transparent,
-      body: Stack(
-        children: [
-          if (widget.child.backgroundEffect != null)
-            Center(child: widget.child.backgroundEffect!),
-          _buildColumn(),
-        ],
-      ),
+      body: _buildColumn(),
     );
   }
 }
