@@ -25,6 +25,41 @@ extension DateTimeExt on DateTime {
     final now = DateTime.now();
     return DateTime(now.year, now.month, now.day + (7 - now.weekday));
   }
+
+  static DateTime get startOfToday {
+    final now = DateTime.now();
+    return DateTime(now.year, now.month, now.day);
+  }
+
+  String toTimeString() {
+    bool isAm = hour < 12;
+
+    int hourParam = hour;
+    if (hour > 12) {
+      hourParam = hour - 12;
+    } else if (hour == 0) {
+      hourParam = 12;
+    }
+    return '${hourParam.toString()}:${minute.toString().padLeft(2, '0')} ${isAm ? 'AM' : 'PM'}';
+  }
+
+  String toLocalizedString() {
+    return DateFormat.yMMMMd().format(this);
+  }
+
+  String toLocalizedMonthString() {
+    return DateFormat.yMMMM().format(this);
+  }
+
+  int daysInMonth() {
+    // 다음 달의 첫 번째 날
+    var nextMonthFirstDay = (month < 12) ? DateTime(year, month + 1, 1) : DateTime(year + 1, 1, 1);
+
+    // 현재 달의 마지막 날
+    var lastDay = nextMonthFirstDay.subtract(const Duration(days: 1)).day;
+
+    return lastDay;
+  }
 }
 
 extension NullableDateTimeExt on DateTime? {

@@ -18,8 +18,7 @@ class ExpandableButton extends StatefulWidget {
   State<ExpandableButton> createState() => ExpandableButtonState();
 }
 
-class ExpandableButtonState extends State<ExpandableButton>
-    with SingleTickerProviderStateMixin {
+class ExpandableButtonState extends State<ExpandableButton> with SingleTickerProviderStateMixin {
   static const int _durationInMillis = 300;
   static const double _size = 44.0;
   static const IconData _defaultIconData = Icons.question_mark;
@@ -36,8 +35,7 @@ class ExpandableButtonState extends State<ExpandableButton>
       vsync: this,
     );
 
-    _scaleAnimation =
-        CurvedAnimation(parent: _controller, curve: Curves.easeInOut);
+    _scaleAnimation = CurvedAnimation(parent: _controller, curve: Curves.easeInOut);
     _reverseScaleAnimation = ReverseAnimation(_scaleAnimation);
   }
 
@@ -71,13 +69,11 @@ class ExpandableButtonState extends State<ExpandableButton>
   Widget _createMainButton(IconData icon, Function() onPressed) {
     Color fillColor = widget.color.semiTransparent;
     Color borderColor = fillColor.light;
-    double widthIncludingPadding =
-        _size + (widget.padding?.left ?? 0) + (widget.padding?.right ?? 0);
+    double widthIncludingPadding = _size + (widget.padding?.left ?? 0) + (widget.padding?.right ?? 0);
     return RawMaterialButton(
       onPressed: onPressed,
       fillColor: fillColor,
-      shape: CircleBorder(
-          side: BorderSide(color: borderColor, width: widthIncludingPadding)),
+      shape: CircleBorder(side: BorderSide(color: borderColor, width: widthIncludingPadding)),
       constraints: const BoxConstraints.tightFor(
         width: _size, // Custom width
         height: _size, // Custom height
@@ -86,8 +82,7 @@ class ExpandableButtonState extends State<ExpandableButton>
     );
   }
 
-  Widget _createTransformedButton(
-      int index, IconData icon, VoidCallback onPressed) {
+  Widget _createTransformedButton(int index, IconData icon, VoidCallback onPressed) {
     double left = index * _size;
     return AnimatedBuilder(
       animation: _controller,
@@ -111,8 +106,8 @@ class ExpandableButtonState extends State<ExpandableButton>
       width: currentWidth, // 최대 확장 크기 지정
       child: Stack(
         children: <Widget>[
-          ...widget.buttons.map((e) => _createTransformedButton(
-              e.index ?? 0, e.iconData ?? _defaultIconData, e.onTap)),
+          ...widget.buttons
+              .map((e) => _createTransformedButton(e.index ?? 0, e.iconData ?? _defaultIconData, e.onPressed)),
         ],
       ),
     );

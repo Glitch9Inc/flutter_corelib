@@ -56,6 +56,10 @@ extension ColorExt on Color {
     return hsl.withLightness(lightness).toColor();
   }
 
+  Color accent() {
+    return brighten(0.4).saturate(1).hue(0.9);
+  }
+
   /// factor: 0.0 ~ 1.0
   /// 0.0: 원래 색상
   /// 1.0: 완전 흑

@@ -9,8 +9,14 @@ extension TimeOfDayExt on TimeOfDay {
     return (other.hour - hour) * 60 + (other.minute - minute);
   }
 
-  String toFirestoreString() {
-    return '${hour.toString().padLeft(2, '0')}:${minute.toString().padLeft(2, '0')}';
+  String toDisplayString() {
+    return '${hour.toString()}:${minute.toString().padLeft(2, '0')} ${period == DayPeriod.am ? 'AM' : 'PM'}';
+  }
+
+  (String hourMinute, String ampm) toDisplayStrings() {
+    String hourMinute = '${hour.toString().padLeft(1, '0')}:${minute.toString().padLeft(2, '0')}';
+    String ampm = period == DayPeriod.am ? 'AM' : 'PM';
+    return (hourMinute, ampm);
   }
 
   TimeOfDay add(Duration duration) {
@@ -23,6 +29,40 @@ extension TimeOfDayExt on TimeOfDay {
     final newMinute = minute - duration.inMinutes;
     final newHour = hour + newMinute ~/ 60;
     return TimeOfDay(hour: newHour % 24, minute: newMinute % 60);
+  }
+
+  int compareTo(TimeOfDay other) {
+    if (hour < other.hour) {
+      return -1;
+    } else if (hour > other.hour) {
+      return 1;
+    } else {
+      return minute.compareTo(other.minute);
+    }
+  }
+
+  bool isAfter(TimeOfDay time) {
+    if (hour > time.hour) {
+      return true;
+    } else if (hour == time.hour) {
+      return minute > time.minute;
+    } else {
+      return false;
+    }
+  }
+
+  bool isBefore(TimeOfDay time) {
+    if (hour < time.hour) {
+      return true;
+    } else if (hour == time.hour) {
+      return minute < time.minute;
+    } else {
+      return false;
+    }
+  }
+
+  DateTime toDateTime() {
+    return DateTime(0, 1, 1, hour, minute);
   }
 }
 

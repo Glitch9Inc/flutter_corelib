@@ -32,11 +32,32 @@ extension DateTimeMapExt on Map<String, DateTime>? {
     if (this == null) return null;
     return this![key];
   }
+
+  Map<String, Timestamp>? toTimestampMap() {
+    if (this == null) return null;
+    return this!.map((key, value) => MapEntry(key, Timestamp.fromDate(value)));
+  }
 }
 
 extension DynamicMapExt on Map<String, dynamic> {
   String getString(String key, {String? defaultValue}) {
-    return this[key] as String? ?? defaultValue ?? '';
+    final value = this[key];
+
+    if (value is String) {
+      return value;
+    }
+
+    if (value == null) {
+      return defaultValue ?? '';
+    }
+
+    final stringValue = value.toString();
+
+    if (stringValue.isEmpty || stringValue == 'null') {
+      return defaultValue ?? '';
+    }
+
+    return stringValue;
   }
 
   int getInt(String key, {int defaultValue = 0}) {
@@ -85,24 +106,27 @@ extension DynamicMapExt on Map<String, dynamic> {
     return [];
   }
 
-  List<String> getStringList(String key) {
+  List<String> getStringList(String key, {List<String> defaultValue = const []}) {
     final value = this[key];
+
     if (value is List<String>) {
       return value;
     }
+
     if (value is List<dynamic>) {
-      return value.map((e) => e.toString()).toList();
+      return List<String>.from(value);
     }
-    return [];
+
+    return defaultValue;
   }
 
-  List<String> getCsvList(String key) {
+  List<String> getStringListCsv(String key) {
     String csv = this[key] as String? ?? '';
     List<String> list = csv.split(',');
     return list.map((e) => e.toSnakeCase()).toList();
   }
 
-  List<T> getCsvEnumList<T extends Enum>(String key, List<T> values) {
+  List<T> getEnumListCsv<T extends Enum>(String key, List<T> values) {
     String csv = this[key] as String? ?? '';
     if (csv == 'all') return values;
 
@@ -119,57 +143,74 @@ extension DynamicMapExt on Map<String, dynamic> {
         print('Enum not found: $element');
       }
     }
-    return result;
+
+    // enum의 인덱스 순서대로 정렬
+    return result..sort((a, b) => a.index.compareTo(b.index));
   }
 
-  Map<String, T> getCastMap<T>(String key, T Function(Object) mapper) {
-    var map = this[key] as Map<String, dynamic>? ?? {};
+  Map<String, T> getCastMap<T>(String key, T Function(Object) mapper, {Map<String, T> defaultValue = const {}}) {
+    var map = this[key] as Map<String, dynamic>? ?? defaultValue;
     return map.map((key, value) => MapEntry(key, mapper(value)));
   }
 
-  Map<String, Object> getMap(String key) {
+  Map<String, Object> getMap(String key, {Map<String, Object> defaultValue = const {}}) {
     if (this[key] is Map<String, Object>) {
       return this[key] as Map<String, Object>;
     }
     if (this[key] is Map<String, dynamic>) {
       return (this[key] as Map<String, dynamic>).map((key, value) => MapEntry(key, value as Object));
     }
-    return {};
+    return defaultValue;
   }
 
-  Map<String, int> getIntMap(String key) {
-    var map = this[key] as Map<String, dynamic>?;
-    return map?.map((key, value) => MapEntry(key, value as int)) ?? {};
+  Map<String, int> getIntMap(String key, {Map<String, int> defaultValue = const {}}) {
+    try {
+      var map = this[key] as Map<String, dynamic>?;
+      return map?.map((key, value) => MapEntry(key, value as int)) ?? defaultValue;
+    } catch (e) {
+      print('Error in getIntMap: $e');
+      return defaultValue;
+    }
   }
 
-  Map<String, String> getStringMap(String key) {
-    var map = this[key] as Map<String, dynamic>?;
-    return map?.map((key, value) => MapEntry(key, value as String)) ?? {};
+  Map<String, String> getStringMap(String key, {Map<String, String> defaultValue = const {}}) {
+    try {
+      var map = this[key] as Map<String, dynamic>?;
+      return map?.map((key, value) => MapEntry(key, value as String)) ?? defaultValue;
+    } catch (e) {
+      print('Error in getStringMap: $e');
+      return defaultValue;
+    }
   }
 
-  Map<String, DateTime> getDateTimeMap(String key) {
-    final value = this[key];
-    if (value is Map<String, DateTime>) {
-      return value;
-    }
+  Map<String, DateTime> getDateTimeMap(String key, {Map<String, DateTime> defaultValue = const {}}) {
+    try {
+      final value = this[key];
+      if (value is Map<String, DateTime>) {
+        return value;
+      }
 
-    if (value is Map<String, Timestamp>) {
-      return value.map((key, value) => MapEntry(key, value.toDate()));
-    }
+      if (value is Map<String, Timestamp>) {
+        return value.map((key, value) => MapEntry(key, value.toDate()));
+      }
 
-    if (value is Map<String, dynamic>) {
-      return value.map((key, value) {
-        if (value is Timestamp) {
-          return MapEntry(key, value.toDate());
-        }
-        if (value is String) {
-          return MapEntry(key, DateTime.tryParse(value) ?? DateTime.now());
-        }
-        return MapEntry(key, value as DateTime);
-      });
-    }
+      if (value is Map<String, dynamic>) {
+        return value.map((key, value) {
+          if (value is Timestamp) {
+            return MapEntry(key, value.toDate());
+          }
+          if (value is String) {
+            return MapEntry(key, DateTime.tryParse(value) ?? DateTime.now());
+          }
+          return MapEntry(key, value as DateTime);
+        });
+      }
 
-    return {};
+      return defaultValue;
+    } catch (e) {
+      print('Error in getDateTimeMap: $e');
+      return defaultValue;
+    }
   }
 
   String _getEnumName(String enumAsString) {
@@ -182,7 +223,11 @@ extension DynamicMapExt on Map<String, dynamic> {
         return value;
       }
     }
-    print('Enum not found: ${this[key]}');
+
+    if (this[key] != null || this[key] is String && this[key].isNotEmpty) {
+      print('Enum not found: ${this[key]}');
+    }
+
     return defaultValue ?? values.first;
   }
 
@@ -195,6 +240,7 @@ extension DynamicMapExt on Map<String, dynamic> {
 
     if (value is List<String>) {
       return value
+          .where((e) => e.isNotEmpty) // Skip empty strings
           .map((e) => values.firstWhere(
               (element) => _getEnumName(element.toString()).toLowerCase() == _getEnumName(e.toString()).toLowerCase()))
           .toList();
@@ -202,6 +248,7 @@ extension DynamicMapExt on Map<String, dynamic> {
 
     if (value is List<dynamic>) {
       return value
+          .where((e) => e == null || (e is String && e.isNotEmpty)) // Skip empty strings
           .map((e) => values.firstWhere(
               (element) => _getEnumName(element.toString()).toLowerCase() == _getEnumName(e.toString()).toLowerCase()))
           .toList();
@@ -257,5 +304,19 @@ extension DynamicMapExt on Map<String, dynamic> {
       return this[key] as Timestamp;
     }
     return defaultValue ?? Timestamp.now();
+  }
+
+  // Added on 2024-09-01
+
+  /// Get a [Duration] value from the map.
+  /// If the value is an integer, it is treated as minutes.
+  Duration getDuration(String key, {Duration? defaultValue}) {
+    if (this[key] is int) {
+      return Duration(minutes: this[key] as int);
+    }
+    if (this[key] is String) {
+      return Duration(minutes: int.tryParse(this[key] as String) ?? 0);
+    }
+    return this[key] as Duration? ?? defaultValue ?? Duration.zero;
   }
 }

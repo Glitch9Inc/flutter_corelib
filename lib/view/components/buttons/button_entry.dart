@@ -6,13 +6,14 @@ class ButtonEntry {
   final Color? color;
   final Widget? icon;
   final IconData? iconData;
-  final Function() onTap;
+  final VoidCallback onPressed;
+
   ButtonEntry({
     this.label,
     this.color,
     this.index,
     this.icon,
     this.iconData,
-    required this.onTap,
+    required this.onPressed,
   });
 }

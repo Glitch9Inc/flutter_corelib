@@ -1,69 +1,46 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_corelib/flutter_corelib.dart';
 
 class ImageButton extends StatelessWidget {
-  final String image;
-  final double width;
-  final double height;
-  final Color? backgroundColor;
-  final BoxDecoration? decoration;
-  final Function onPressed;
+  final String imagePath;
+  final double? width;
+  final double? height;
+  final Color? color;
+  final Color disabledColor;
+  final VoidCallback? onPressed;
   final BoxFit fit;
+  final bool interactable;
 
   const ImageButton({
     super.key,
-    required this.image,
-    required this.width,
-    required this.height,
+    required this.imagePath,
     required this.onPressed,
-    this.decoration,
-    this.backgroundColor,
+    this.width,
+    this.height,
     this.fit = BoxFit.cover,
+    this.color,
+    this.interactable = true,
+    this.disabledColor = routinaDisabledBorder,
   });
-
-  Widget _buildButton() {
-    if (decoration != null) {
-      return Container(
-        width: width,
-        height: height,
-        decoration: decoration,
-        child: Image.asset(
-          image,
-          fit: fit,
-          width: width - 5,
-          height: height - 5,
-        ),
-      );
-    }
-
-    if (backgroundColor != null) {
-      return Container(
-        width: width,
-        height: height,
-        color: backgroundColor,
-        child: Image.asset(
-          image,
-          fit: fit,
-          width: width - 5,
-          height: height - 5,
-        ),
-      );
-    }
-
-    return Image.asset(
-      image,
-      width: width,
-      height: height,
-      fit: fit,
-    );
-  }
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: () {
-        onPressed();
+    return InkWell(
+      onTap: () => {
+        if (interactable) {onPressed?.call()}
       },
-      child: _buildButton(),
+      borderRadius: BorderRadius.circular(100),
+      child: SizedBox(
+        height: height,
+        width: width,
+        child: Center(
+          child: Image.asset(
+            imagePath,
+            color: interactable ? color : disabledColor,
+            fit: fit,
+          ),
+        ),
+      ),
     );
   }
 }

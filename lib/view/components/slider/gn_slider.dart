@@ -10,12 +10,12 @@ class GNSlider extends StatefulWidget {
   final double thickness;
   final Color fillColor;
   final Color backgroundColor;
-  final Function(double) onChanged;
+  final Function(double)? onChanged;
 
   const GNSlider({
     super.key,
     required this.value,
-    required this.onChanged,
+    this.onChanged,
     this.min = 0.0,
     this.max = 1.0,
     this.thumb,
@@ -47,7 +47,7 @@ class _GNSliderState extends State<GNSlider> {
     setState(() {
       _value = newValue;
     });
-    widget.onChanged(newValue);
+    widget.onChanged?.call(newValue);
   }
 
   Widget _buildThumb(double sliderWidth) {
@@ -61,7 +61,9 @@ class _GNSliderState extends State<GNSlider> {
 
   @override
   Widget build(BuildContext context) {
-    double sliderWidth = widget.width ?? double.infinity;
+    double sliderWidth = widget.width ?? MediaQuery.of(context).size.width;
+    sliderWidth = sliderWidth.isFinite ? sliderWidth : MediaQuery.of(context).size.width;
+
     return GestureDetector(
       onPanUpdate: (details) {
         _updateValue(details.localPosition, sliderWidth);

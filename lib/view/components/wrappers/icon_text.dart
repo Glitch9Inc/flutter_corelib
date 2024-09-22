@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_corelib/view/components/wrappers/stroke_text.dart';
+import 'package:flutter_corelib/flutter_corelib.dart';
 
 class IconText extends StatelessWidget {
   final Widget? icon;
@@ -10,7 +10,7 @@ class IconText extends StatelessWidget {
   final double? iconSize;
   final Color? iconColor;
   final TextAlign? textAlign;
-  final StrokeStyle? strokeStyle;
+  final StrokeType? strokeStyle;
   final Color? strokeColor;
   final double? strokeWidth;
 
@@ -47,6 +47,7 @@ class IconText extends StatelessWidget {
         iconData,
         size: localIconSize,
         color: localIconColor,
+        shadows: strokeColor != null ? getBoxShadow(color: strokeColor!) : null,
       );
     }
   }
@@ -113,17 +114,15 @@ class IconText extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Row(
+      mainAxisSize: MainAxisSize.min,
       mainAxisAlignment: _resolveMainAxisAlignment(),
       crossAxisAlignment: _resolveCrossAxisAlignment(),
       children: [
         _resolveIcon(),
         SizedBox(width: _resolveSpace()),
-        StrokeText(
+        Text(
           text,
           style: style,
-          strokeStyle: strokeStyle ?? StrokeStyle.solid,
-          strokeColor: strokeColor,
-          strokeWidth: strokeWidth,
         ),
       ],
     );

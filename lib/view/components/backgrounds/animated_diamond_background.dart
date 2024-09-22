@@ -35,7 +35,7 @@ class AnimatedDiamondBackgroundState extends State<AnimatedDiamondBackground> wi
   void initState() {
     super.initState();
     color = widget.color;
-    backgroundColor = widget.backgroundColor == null ? color.darken(0.1) : widget.backgroundColor!;
+    backgroundColor = widget.backgroundColor ?? color.darken(0.1);
 
     _panController = AnimationController(
       vsync: this,
@@ -44,7 +44,7 @@ class AnimatedDiamondBackgroundState extends State<AnimatedDiamondBackground> wi
 
     _colorController = AnimationController(
       vsync: this,
-      duration: const Duration(seconds: 1),
+      duration: const Duration(milliseconds: 500),
     );
 
     _colorAnimation = ColorTween(begin: color, end: color).animate(_colorController);
@@ -52,14 +52,10 @@ class AnimatedDiamondBackgroundState extends State<AnimatedDiamondBackground> wi
 
     _colorController.addListener(() {
       if (mounted) {
-        try {
-          setState(() {
-            color = _colorAnimation.value!;
-            backgroundColor = _backgroundColorAnimation.value!;
-          });
-        } catch (e) {
-          print(e);
-        }
+        setState(() {
+          color = _colorAnimation.value!;
+          backgroundColor = _backgroundColorAnimation.value!;
+        });
       }
     });
   }
@@ -99,29 +95,42 @@ class AnimatedDiamondBackgroundState extends State<AnimatedDiamondBackground> wi
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      color: backgroundColor,
-      child: AnimatedBuilder(
-        animation: _panController,
-        builder: (context, child) {
-          return Stack(
-            children: [
-              for (double dx = -1.0; dx <= 1.0; dx++)
-                for (double dy = -1.0; dy <= 1.0; dy++)
-                  Transform.translate(
-                    offset: _getOffset(_panController.value * 100) + Offset(dx * 100, dy * 100),
-                    child: child,
-                  ),
-            ],
-          );
-        },
-        child: CustomPaint(
-          painter: DiamondPainter(
-            color: color,
-            shapeWidth: widget.diamondWidth,
-            shapeHeight: widget.diamondHeight,
+    return RepaintBoundary(
+      child: Container(
+        color: backgroundColor,
+        child: AnimatedBuilder(
+          animation: _panController,
+          builder: (context, child) {
+            final offset = _getOffset(_panController.value * 100);
+            return Stack(
+              children: [
+                Transform.translate(
+                  offset: offset,
+                  child: child,
+                ),
+                Transform.translate(
+                  offset: offset + const Offset(100, 0),
+                  child: child,
+                ),
+                Transform.translate(
+                  offset: offset + const Offset(0, 100),
+                  child: child,
+                ),
+                Transform.translate(
+                  offset: offset + const Offset(100, 100),
+                  child: child,
+                ),
+              ],
+            );
+          },
+          child: CustomPaint(
+            painter: DiamondPainter(
+              color: color,
+              shapeWidth: widget.diamondWidth,
+              shapeHeight: widget.diamondHeight,
+            ),
+            size: Size.infinite,
           ),
-          size: Size.infinite,
         ),
       ),
     );
