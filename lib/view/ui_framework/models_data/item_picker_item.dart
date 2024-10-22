@@ -6,6 +6,9 @@ class ItemPickerItem {
   final String? iconAsset;
   final String title;
   final String? subtitle;
+  final int indentLevel;
+  final bool Function()? showIfTrue;
+  bool isSelected;
 
   ItemPickerItem(
     this.index, {
@@ -13,6 +16,9 @@ class ItemPickerItem {
     this.iconAsset,
     required this.title,
     this.subtitle,
+    this.isSelected = false,
+    this.indentLevel = 0,
+    this.showIfTrue,
   });
 
   @override

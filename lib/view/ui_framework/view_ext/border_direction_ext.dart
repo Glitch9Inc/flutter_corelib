@@ -28,7 +28,7 @@ extension BorderDirectionExt on BorderDirection {
     return BorderRadius.circular(radius);
   }
 
-  Border? resolveBorder(Color color, [double width = 2, bool noneToAll = false]) {
+  Border? resolveBorder(Color color, [double width = 1, bool noneToAll = false, bool includeSides = true]) {
     if (this == BorderDirection.none) {
       if (noneToAll) {
         return Border.all(
@@ -50,6 +50,7 @@ extension BorderDirectionExt on BorderDirection {
       return BorderExt.top(
         width,
         color,
+        includeSides: includeSides,
       );
     }
 
@@ -57,6 +58,7 @@ extension BorderDirectionExt on BorderDirection {
       return BorderExt.bottom(
         width,
         color,
+        includeSides: includeSides,
       );
     }
 
@@ -64,6 +66,7 @@ extension BorderDirectionExt on BorderDirection {
       return BorderExt.left(
         width,
         color,
+        includeSides: includeSides,
       );
     }
 
@@ -71,6 +74,7 @@ extension BorderDirectionExt on BorderDirection {
       return BorderExt.right(
         width,
         color,
+        includeSides: includeSides,
       );
     }
 

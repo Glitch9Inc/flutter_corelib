@@ -16,6 +16,8 @@ abstract class UIFramework {
     UIColor.gold: routinaYellow, // placeholder
     UIColor.pink: routinaPink,
     UIColor.indigo: routinaIndigo,
+    UIColor.darkGrey: routinaDarkGrey,
+    UIColor.teal: Colors.teal,
   };
 
   static MaterialColor createMaterialColor(Color color) {

@@ -37,7 +37,7 @@ class TextDivider extends StatelessWidget {
         ],
         Text(
           text,
-          style: textStyle ?? Get.textTheme.bodyMedium,
+          style: textStyle ?? Get.textTheme.bodyMedium!.copyWith(color: color),
         ),
       ]),
     );
@@ -48,7 +48,8 @@ class TextDivider extends StatelessWidget {
     return Row(
       children: [
         if (textPosition == TextPosition.start) ...[
-          Expanded(
+          Flexible(
+            fit: FlexFit.loose,
             flex: 1,
             child: Divider(
               thickness: thickness,
@@ -57,25 +58,38 @@ class TextDivider extends StatelessWidget {
           ),
           _text(),
         ],
-        Expanded(
-          flex: textPositionFlex,
-          child: Divider(
-            thickness: thickness,
-            color: color,
+        if (textPosition == TextPosition.center) ...[
+          Flexible(
+            fit: FlexFit.loose,
+            flex: textPositionFlex,
+            child: Divider(
+              thickness: thickness,
+              color: color,
+            ),
           ),
-        ),
-        if (textPosition == TextPosition.center) _text(),
-        Expanded(
-          flex: textPositionFlex,
-          child: Divider(
-            thickness: thickness,
-            color: color,
-          ),
-        ),
-        if (textPosition == TextPosition.end) ...[
           _text(),
-          Expanded(
+          Flexible(
+            fit: FlexFit.loose,
+            flex: textPositionFlex,
+            child: Divider(
+              thickness: thickness,
+              color: color,
+            ),
+          ),
+        ] else if (textPosition == TextPosition.end) ...[
+          _text(),
+          Flexible(
+            fit: FlexFit.loose,
             flex: 1,
+            child: Divider(
+              thickness: thickness,
+              color: color,
+            ),
+          ),
+        ] else ...[
+          Flexible(
+            fit: FlexFit.loose,
+            flex: textPositionFlex,
             child: Divider(
               thickness: thickness,
               color: color,

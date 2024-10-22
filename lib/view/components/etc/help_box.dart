@@ -11,14 +11,20 @@ enum MessageType {
 /// UnityEditor 인스펙터 스타일의 helpbox 위젯
 class HelpBox extends StatelessWidget {
   final String text;
+  final double? width;
+  final double? height;
   final MessageType? type;
   final Decoration? decoration;
+  final EdgeInsets? margin;
 
   const HelpBox(
     this.text, {
     super.key,
     this.type,
     this.decoration,
+    this.margin,
+    this.width,
+    this.height,
   });
 
   IconData _resolveIcon() {
@@ -43,13 +49,13 @@ class HelpBox extends StatelessWidget {
           ? Colors.red.withOpacity(.1)
           : type == MessageType.warning
               ? Colors.yellow.withOpacity(.1)
-              : Colors.blue.withOpacity(.1),
+              : Colors.cyan.withOpacity(.1),
       border: Border.all(
         color: type == MessageType.error
             ? Colors.red
             : type == MessageType.warning
                 ? Colors.yellow
-                : Colors.blue,
+                : Colors.cyan,
       ),
     );
   }
@@ -57,6 +63,9 @@ class HelpBox extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
+      width: width,
+      height: height,
+      margin: margin,
       padding: const EdgeInsets.all(8),
       decoration: _resolveDecoration(),
       child: Row(
@@ -67,7 +76,7 @@ class HelpBox extends StatelessWidget {
                 ? Colors.red
                 : type == MessageType.warning
                     ? Colors.yellow
-                    : Colors.blue,
+                    : Colors.cyan,
           ),
           const SizedBox(width: 8),
           Expanded(
@@ -78,7 +87,7 @@ class HelpBox extends StatelessWidget {
                     ? Colors.red
                     : type == MessageType.warning
                         ? Colors.yellow
-                        : Colors.blue,
+                        : Colors.cyan,
               ),
             ),
           ),

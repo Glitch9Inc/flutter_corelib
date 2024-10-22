@@ -8,6 +8,7 @@ class Result<T> {
   Result({required this.isSuccess, this.message, this.data});
 
   bool get isError => !isSuccess;
+  bool get isFailure => !isSuccess;
   bool get hasData => data != null;
 
   factory Result.successVoid() {

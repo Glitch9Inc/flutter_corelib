@@ -1,36 +1,23 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_corelib/flutter_corelib.dart' hide TextDirection;
 
-enum StrokeType {
-  solid,
-  blurred,
-}
-
-class StrokeStyle {
-  final double? width;
-  final Color? color;
-  final StrokeType type;
-  final int intensity;
-
-  const StrokeStyle({
-    this.width,
-    this.color,
-    this.type = StrokeType.solid,
-    this.intensity = 2,
-  });
-}
+export 'stroke_type.dart';
+export 'stroke_style.dart';
 
 class StrokeText extends StatelessWidget {
   final String text;
 
-  final Color fontColor;
+  // 기본 폰트 설정
   final TextStyle? style;
   final TextAlign? textAlign;
-  final StrokeStyle strokeStyle;
-  final TextDirection? textDirection;
   final TextOverflow? overflow;
   final int? maxLines;
   final double minFontSize;
+
+  // 추가 설정
+  final StrokeStyle? strokeStyle;
+  final TextDirection? textDirection;
+  final Color fontColor;
 
   const StrokeText(
     this.text, {
@@ -46,13 +33,13 @@ class StrokeText extends StatelessWidget {
   }) : strokeStyle = strokeStyle ?? const StrokeStyle();
 
   Color _resolveStrokeColor() {
-    if (strokeStyle.color != null) return strokeStyle!.color!;
-    if (strokeStyle.type == StrokeType.solid) return Colors.black;
+    if (strokeStyle!.color != null) return strokeStyle!.color!;
+    if (strokeStyle!.type == StrokeType.outline) return Colors.black;
     return Colors.black.withOpacity(0.5);
   }
 
   double _resolveStrokeWidth() {
-    if (strokeStyle.width != null) return strokeStyle.width!;
+    if (strokeStyle!.width != null) return strokeStyle!.width!;
     if (style != null) return style!.fontSize! / 5;
     return 3;
   }
@@ -75,7 +62,7 @@ class StrokeText extends StatelessWidget {
   }
 
   TextStyle _mergeStyle() {
-    if (strokeStyle.type == StrokeType.solid) {
+    if (strokeStyle!.type == StrokeType.outline) {
       return TextStyle(
           fontSize: style!.fontSize,
           fontWeight: style!.fontWeight,
@@ -95,7 +82,7 @@ class StrokeText extends StatelessWidget {
         letterSpacing: style!.letterSpacing,
         wordSpacing: style!.wordSpacing,
         height: style!.height,
-        shadows: List.generate(strokeStyle.intensity, (index) => _blurredShadow()),
+        shadows: List.generate(strokeStyle!.intensity, (index) => _blurredShadow()),
       );
     }
   }

@@ -26,6 +26,20 @@ extension DateTimeExt on DateTime {
     return DateTime(now.year, now.month, now.day + (7 - now.weekday));
   }
 
+  DateTime get nextWeek {
+    return DateTime(year, month, day + 7);
+  }
+
+  DateTime get nextMonth {
+    int nextMonth = month + 1;
+    if (nextMonth > 12) nextMonth = 1;
+    return DateTime(year, nextMonth, day);
+  }
+
+  DateTime get nextYear {
+    return DateTime(year + 1, month, day);
+  }
+
   static DateTime get startOfToday {
     final now = DateTime.now();
     return DateTime(now.year, now.month, now.day);
@@ -49,6 +63,10 @@ extension DateTimeExt on DateTime {
 
   String toLocalizedMonthString() {
     return DateFormat.yMMMM().format(this);
+  }
+
+  String toAbbrString() {
+    return DateFormat.MMMd().format(this);
   }
 
   int daysInMonth() {

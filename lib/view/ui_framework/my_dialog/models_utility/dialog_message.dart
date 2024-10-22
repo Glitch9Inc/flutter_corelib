@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_corelib/flutter_corelib.dart';
 
-class DialogMessage extends StatefulInnerWidget {
+class DialogMessage extends StatefulWidget {
+  final String title;
+  final Color? backgroundColor;
+  final List<DialogAction>? actions;
   final String message;
   final MessageType messageType;
   final Widget? image;
@@ -9,12 +12,13 @@ class DialogMessage extends StatefulInnerWidget {
 
   const DialogMessage({
     super.key,
-    required super.title,
+    required this.title,
     required this.message,
     this.messageType = MessageType.info,
     this.image,
-    super.actions,
+    this.actions,
     this.onClose,
+    this.backgroundColor,
   });
 
   @override
@@ -46,7 +50,7 @@ class DialogMessageState extends State<DialogMessage> {
     Color bgColor = _resolveBackgroundColor();
 
     return PopupContainer(
-      title: widget.title,
+      // title: widget.title,
       showCloseButton: false,
       padding: const EdgeInsets.all(20),
       backgroundColor: bgColor,
@@ -57,6 +61,15 @@ class DialogMessageState extends State<DialogMessage> {
             widget.image!,
             const SizedBox(height: 10),
           ],
+          StrokeText(
+            widget.title,
+            style: Get.textTheme.headlineSmall,
+            textAlign: TextAlign.center,
+            strokeStyle: StrokeStyle(
+              type: StrokeType.shadow,
+              color: bgColor.darken(0.1),
+            ),
+          ),
           const SizedBox(height: 10),
           StrokeText(
             widget.message,
@@ -66,7 +79,7 @@ class DialogMessageState extends State<DialogMessage> {
             ),
             textAlign: TextAlign.center,
             strokeStyle: StrokeStyle(
-              type: StrokeType.blurred,
+              type: StrokeType.shadow,
               color: bgColor.darken(0.1),
             ),
           ),

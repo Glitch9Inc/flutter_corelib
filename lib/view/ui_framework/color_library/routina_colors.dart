@@ -1,6 +1,9 @@
 // routina colors
 import 'package:flutter/material.dart';
 
+const Color routinaSelectedBorder = Color.fromARGB(255, 62, 255, 249);
+const Color routinaDisabledBorder = Color.fromARGB(255, 100, 100, 100);
+
 const Color routinaGreenW100 = Color.fromARGB(255, 40, 245, 200);
 const Color routinaGreenW200 = Color.fromARGB(255, 35, 225, 175);
 const Color routinaGreenW300 = Color.fromARGB(255, 30, 205, 155);
@@ -45,15 +48,15 @@ const MaterialColor routinaTeal = MaterialColor(0xFF0AFFFF, <int, Color>{
   900: routinaTealW900,
 });
 
-const Color routinaRedW100 = Color.fromARGB(255, 255, 70, 70);
-const Color routinaRedW200 = Color.fromARGB(255, 245, 60, 80);
-const Color routinaRedW300 = Color.fromARGB(255, 235, 50, 90);
-const Color routinaRedW400 = Color.fromARGB(255, 225, 40, 100);
-const Color routinaRedW500 = Color.fromARGB(255, 215, 30, 110);
-const Color routinaRedW600 = Color.fromARGB(255, 205, 20, 120);
-const Color routinaRedW700 = Color.fromARGB(255, 195, 10, 130);
-const Color routinaRedW800 = Color.fromARGB(255, 185, 0, 140);
-const Color routinaRedW900 = Color.fromARGB(255, 175, 0, 150);
+const Color routinaRedW100 = Color.fromARGB(255, 255, 70, 70); // Light red
+const Color routinaRedW200 = Color.fromARGB(255, 245, 60, 60); // Slightly darker red
+const Color routinaRedW300 = Color.fromARGB(255, 235, 50, 50); // Darker red
+const Color routinaRedW400 = Color.fromARGB(255, 225, 40, 40); // Deeper red
+const Color routinaRedW500 = Color.fromARGB(255, 215, 30, 30); // Strong red
+const Color routinaRedW600 = Color.fromARGB(255, 205, 20, 20); // Deep red
+const Color routinaRedW700 = Color.fromARGB(255, 195, 10, 10); // Dark red
+const Color routinaRedW800 = Color.fromARGB(255, 185, 0, 0); // Very dark red
+const Color routinaRedW900 = Color.fromARGB(255, 175, 0, 0); // Deepest red
 
 const MaterialColor routinaRed = MaterialColor(0xFFFF9646, <int, Color>{
   100: routinaRedW100,
@@ -70,12 +73,12 @@ const MaterialColor routinaRed = MaterialColor(0xFFFF9646, <int, Color>{
 const Color routinaPinkW100 = Color.fromARGB(255, 255, 155, 255);
 const Color routinaPinkW200 = Color.fromARGB(255, 255, 145, 255);
 const Color routinaPinkW300 = Color.fromARGB(255, 255, 125, 255);
-const Color routinaPinkW400 = Color.fromARGB(255, 255, 105, 255);
-const Color routinaPinkW500 = Color.fromARGB(255, 245, 85, 230);
-const Color routinaPinkW600 = Color.fromARGB(255, 235, 65, 210);
-const Color routinaPinkW700 = Color.fromARGB(255, 225, 45, 190);
-const Color routinaPinkW800 = Color.fromARGB(255, 215, 25, 170);
-const Color routinaPinkW900 = Color.fromARGB(255, 205, 5, 150);
+const Color routinaPinkW400 = Color.fromARGB(255, 255, 105, 235);
+const Color routinaPinkW500 = Color.fromARGB(255, 245, 85, 210);
+const Color routinaPinkW600 = Color.fromARGB(255, 235, 65, 190);
+const Color routinaPinkW700 = Color.fromARGB(255, 225, 45, 170);
+const Color routinaPinkW800 = Color.fromARGB(255, 215, 25, 150);
+const Color routinaPinkW900 = Color.fromARGB(255, 205, 5, 130);
 
 const MaterialColor routinaPink = MaterialColor(0xFFFF9BFF, <int, Color>{
   100: routinaPinkW100,
@@ -89,15 +92,15 @@ const MaterialColor routinaPink = MaterialColor(0xFFFF9BFF, <int, Color>{
   900: routinaPinkW900,
 });
 
-const Color routinaOrangeW100 = Color.fromARGB(255, 255, 165, 0);
-const Color routinaOrangeW200 = Color.fromARGB(255, 255, 143, 0);
-const Color routinaOrangeW300 = Color.fromARGB(255, 255, 143, 0);
-const Color routinaOrangeW400 = Color.fromARGB(255, 255, 143, 0);
-const Color routinaOrangeW500 = Color.fromARGB(255, 166, 117, 18);
-const Color routinaOrangeW600 = Color.fromARGB(255, 144, 100, 16);
-const Color routinaOrangeW700 = Color.fromARGB(255, 120, 86, 19);
-const Color routinaOrangeW800 = Color.fromARGB(255, 97, 70, 16);
-const Color routinaOrangeW900 = Color.fromARGB(255, 141, 89, 17);
+const Color routinaOrangeW100 = Color.fromARGB(255, 255, 165, 0); // 밝은 오렌지
+const Color routinaOrangeW200 = Color.fromARGB(255, 255, 143, 0); // 조금 더 진한 오렌지
+const Color routinaOrangeW300 = Color.fromARGB(255, 255, 130, 0); // 진한 오렌지
+const Color routinaOrangeW400 = Color.fromARGB(255, 255, 110, 0); // 더 깊은 오렌지
+const Color routinaOrangeW500 = Color.fromARGB(255, 235, 90, 10); // 짙은 오렌지
+const Color routinaOrangeW600 = Color.fromARGB(255, 215, 75, 5); // 오렌지-레드 계열
+const Color routinaOrangeW700 = Color.fromARGB(255, 195, 65, 5); // 짙은 오렌지-레드
+const Color routinaOrangeW800 = Color.fromARGB(255, 175, 55, 5); // 어둡지 않은 짙은 오렌지
+const Color routinaOrangeW900 = Color.fromARGB(255, 160, 45, 0); // 가장 짙은 오렌지, 브라운 아님
 
 const MaterialColor routinaOrange = MaterialColor(0xFFFFA500, <int, Color>{
   100: routinaOrangeW100,
@@ -177,15 +180,15 @@ const MaterialColor routinaLightBlue = MaterialColor(0xFF91D2FF, <int, Color>{
   900: routinaLightBlueW900,
 });
 
-const Color routinaIndigoW100 = Color.fromARGB(255, 165, 165, 255);
-const Color routinaIndigoW200 = Color.fromARGB(255, 145, 145, 255);
-const Color routinaIndigoW300 = Color.fromARGB(255, 125, 125, 255);
-const Color routinaIndigoW400 = Color.fromARGB(255, 105, 105, 235);
-const Color routinaIndigoW500 = Color.fromARGB(255, 80, 85, 215);
-const Color routinaIndigoW600 = Color.fromARGB(255, 60, 75, 195);
-const Color routinaIndigoW700 = Color.fromARGB(255, 40, 65, 175);
-const Color routinaIndigoW800 = Color.fromARGB(255, 20, 55, 155);
-const Color routinaIndigoW900 = Color.fromARGB(255, 0, 45, 135);
+const Color routinaIndigoW100 = Color.fromARGB(255, 135, 135, 220);
+const Color routinaIndigoW200 = Color.fromARGB(255, 115, 115, 200);
+const Color routinaIndigoW300 = Color.fromARGB(255, 95, 95, 180);
+const Color routinaIndigoW400 = Color.fromARGB(255, 75, 75, 160);
+const Color routinaIndigoW500 = Color.fromARGB(255, 60, 65, 140);
+const Color routinaIndigoW600 = Color.fromARGB(255, 45, 55, 120);
+const Color routinaIndigoW700 = Color.fromARGB(255, 35, 45, 100);
+const Color routinaIndigoW800 = Color.fromARGB(255, 25, 35, 85);
+const Color routinaIndigoW900 = Color.fromARGB(255, 15, 30, 70);
 
 const MaterialColor routinaIndigo = MaterialColor(0xFFA5A5FF, <int, Color>{
   100: routinaIndigoW100,
@@ -199,18 +202,15 @@ const MaterialColor routinaIndigo = MaterialColor(0xFFA5A5FF, <int, Color>{
   900: routinaIndigoW900,
 });
 
-const Color routinaSelectedBorder = Color.fromARGB(255, 62, 255, 249);
-const Color routinaDisabledBorder = Color.fromARGB(255, 100, 100, 100);
-
-const Color routinaPurpleW100 = Color.fromARGB(255, 165, 165, 255);
-const Color routinaPurpleW200 = Color.fromARGB(255, 145, 145, 255);
-const Color routinaPurpleW300 = Color.fromARGB(255, 125, 125, 255);
-const Color routinaPurpleW400 = Color.fromARGB(255, 105, 105, 235);
-const Color routinaPurpleW500 = Color.fromARGB(255, 85, 85, 215); // r: + 20, g: + 20, b: + 20
-const Color routinaPurpleW600 = Color.fromARGB(255, 65, 65, 195);
-const Color routinaPurpleW700 = Color.fromARGB(255, 45, 45, 175);
-const Color routinaPurpleW800 = Color.fromARGB(255, 25, 25, 155);
-const Color routinaPurpleW900 = Color.fromARGB(255, 5, 5, 135);
+const Color routinaPurpleW100 = Color.fromARGB(255, 210, 190, 255); // 밝은 보라색, 채도 높임
+const Color routinaPurpleW200 = Color.fromARGB(255, 190, 170, 245); // 더 진한 보라색, 채도 높임
+const Color routinaPurpleW300 = Color.fromARGB(255, 170, 150, 235); // 진한 보라색, 채도 높임
+const Color routinaPurpleW400 = Color.fromARGB(255, 150, 130, 225); // 더 짙은 보라색
+const Color routinaPurpleW500 = Color.fromARGB(255, 130, 110, 205); // 중간 단계
+const Color routinaPurpleW600 = Color.fromARGB(255, 110, 90, 185); // 짙은 보라색
+const Color routinaPurpleW700 = Color.fromARGB(255, 90, 70, 165); // 더 깊은 보라색
+const Color routinaPurpleW800 = Color.fromARGB(255, 70, 50, 145); // 어두운 보라색
+const Color routinaPurpleW900 = Color.fromARGB(255, 50, 30, 125); // 어두운 보라색, 괜찮음
 
 const MaterialColor routinaPurple = MaterialColor(0xFFA5A5FF, <int, Color>{
   100: routinaPurpleW100,
@@ -290,15 +290,15 @@ const MaterialColor routinaCyan = MaterialColor(0xFF00FFFF, <int, Color>{
   900: routinaCyanW900,
 });
 
-const Color routinaBlueGreyW100 = Color.fromARGB(255, 157, 158, 226);
-const Color routinaBlueGreyW200 = Color.fromARGB(255, 144, 164, 174);
-const Color routinaBlueGreyW300 = Color.fromARGB(255, 144, 164, 174);
-const Color routinaBlueGreyW400 = Color.fromARGB(255, 120, 144, 156);
-const Color routinaBlueGreyW500 = Color.fromARGB(255, 96, 125, 139);
-const Color routinaBlueGreyW600 = Color.fromARGB(255, 84, 110, 122);
-const Color routinaBlueGreyW700 = Color.fromARGB(255, 69, 90, 100);
-const Color routinaBlueGreyW800 = Color.fromARGB(255, 69, 90, 100);
-const Color routinaBlueGreyW900 = Color.fromARGB(255, 69, 90, 100);
+const Color routinaBlueGreyW100 = Color.fromARGB(255, 157, 170, 230); // 조금 더 파랗게
+const Color routinaBlueGreyW200 = Color.fromARGB(255, 144, 172, 182); // 더 파란 느낌 추가
+const Color routinaBlueGreyW300 = Color.fromARGB(255, 144, 172, 182); // 동일하게 적용
+const Color routinaBlueGreyW400 = Color.fromARGB(255, 120, 150, 170); // 더 파란 느낌 추가
+const Color routinaBlueGreyW500 = Color.fromARGB(255, 96, 135, 155); // 파란 느낌 증가
+const Color routinaBlueGreyW600 = Color.fromARGB(255, 84, 120, 140); // 파란 색상 강화
+const Color routinaBlueGreyW700 = Color.fromARGB(255, 69, 100, 120); // 더 파랗게
+const Color routinaBlueGreyW800 = Color.fromARGB(255, 69, 100, 120); // 동일하게 적용
+const Color routinaBlueGreyW900 = Color.fromARGB(255, 69, 100, 120); // 동일하게 적용
 
 const MaterialColor routinaBlueGrey = MaterialColor(0xFF9D9EE2, <int, Color>{
   100: routinaBlueGreyW100,
@@ -374,6 +374,7 @@ const Color routinaCharcoalW100 = Color.fromARGB(255, 93, 93, 125);
 const Color routinaCharcoalW300 = Color.fromARGB(255, 61, 61, 89);
 const Color routinaCharcoalW500 = Color.fromARGB(255, 61, 61, 89);
 const Color routinaCharcoalW700 = Color.fromARGB(255, 41, 41, 49);
+const Color routinaCharcoalW800 = Color.fromARGB(255, 20, 20, 30);
 const Color routinaCharcoalW900 = Color.fromARGB(255, 30, 30, 50);
 
 /// 주로 Container 배경색으로 사용

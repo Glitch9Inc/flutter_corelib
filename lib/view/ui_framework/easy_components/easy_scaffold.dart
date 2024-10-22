@@ -8,7 +8,6 @@ class EasyScaffold extends StatelessWidget {
   final Widget? background;
   final List<Widget>? overlays;
   final Color backgroundColor;
-  final double? customBottomNavigationBarHeight;
   final bool canPop;
 
   const EasyScaffold({
@@ -21,29 +20,19 @@ class EasyScaffold extends StatelessWidget {
     this.overlays,
     this.backgroundColor = Colors.transparent,
     this.canPop = true,
-    this.customBottomNavigationBarHeight,
   });
 
-  Widget? _resolveBottomNavigationBarInsideScaffold() {
-    if (customBottomNavigationBarHeight != null) {
-      return null;
-    } else {
-      return bottomNavigationBar;
-    }
-  }
-
   Widget? _resolveBody() {
-    if ((bottomNavigationBar != null && customBottomNavigationBarHeight != null) ||
-        (overlays != null && overlays!.isNotEmpty)) {
+    if (bottomNavigationBar != null || (overlays != null && overlays!.isNotEmpty)) {
       return Stack(
         children: [
-          Padding(
-            padding: EdgeInsets.only(bottom: customBottomNavigationBarHeight!),
-            child: body,
-          ),
+          body,
           Align(
             alignment: Alignment.bottomCenter,
-            child: bottomNavigationBar,
+            child: SizedBox(
+              width: double.infinity,
+              child: bottomNavigationBar,
+            ),
           ),
           if (overlays != null && overlays!.isNotEmpty) ...overlays!,
         ],
@@ -58,7 +47,6 @@ class EasyScaffold extends StatelessWidget {
       return Scaffold(
         drawer: drawer,
         floatingActionButton: floatingActionButton,
-        bottomNavigationBar: _resolveBottomNavigationBarInsideScaffold(),
         backgroundColor: backgroundColor,
         body: _resolveBody(),
       );
@@ -68,7 +56,6 @@ class EasyScaffold extends StatelessWidget {
         child: Scaffold(
           drawer: drawer,
           floatingActionButton: floatingActionButton,
-          bottomNavigationBar: _resolveBottomNavigationBarInsideScaffold(),
           backgroundColor: backgroundColor,
           body: _resolveBody(),
         ),
@@ -81,7 +68,7 @@ class EasyScaffold extends StatelessWidget {
     if (background != null) {
       return Stack(
         children: [
-          background!,
+          Positioned.fill(child: background!),
           _buildScaffold(),
         ],
       );

@@ -13,32 +13,30 @@ List<BoxShadow> getBoxShadow({Color? color, double radius = 2, double shadowOpac
   ];
 }
 
-List<BoxShadow> getBoxGlow({required Color glowColor, double glowRadius = 10}) {
+List<BoxShadow> getBoxGlow({required Color glowColor, double radius = 2}) {
   glowColor = glowColor.saturate(.1);
   return [
     BoxShadow(
       color: glowColor,
-      blurRadius: glowRadius,
-    ),
-    BoxShadow(
-      color: glowColor,
-      blurRadius: glowRadius,
-    ),
-    BoxShadow(
-      color: glowColor,
-      blurRadius: glowRadius,
+      blurRadius: radius,
     ),
   ];
 }
 
-List<BoxShadow> getCartoonBoxShadow({required Color color, double thickness = 3, double shadowOpacity = 0.25}) {
+List<BoxShadow> getCartoonBoxShadow({
+  required Color color,
+  double thickness = 3,
+  double shadowOpacity = 0.5,
+  bool noShadow = false,
+}) {
   return [
-    BoxShadow(
-      color: Colors.black.withOpacity(shadowOpacity),
-      spreadRadius: 1,
-      blurRadius: 1,
-      offset: Offset(0, thickness * 1.5),
-    ),
+    if (!noShadow)
+      BoxShadow(
+        color: Colors.black.withOpacity(shadowOpacity),
+        spreadRadius: 1,
+        blurRadius: 1,
+        offset: Offset(0, thickness * 1.5),
+      ),
     BoxShadow(
       color: color,
       offset: Offset(0, thickness),
@@ -65,20 +63,18 @@ List<Shadow> getTextGlow(Color color, double blurRadius) {
   ];
 }
 
-List<Shadow> getTextPopShadow(Color color, double radius) {
-  Color adjustedColor = color.darken(0.15).saturate(0.4);
-  double adjustedRadius = radius * 2;
+/// 배경때문에 텍스트가 잘 안보일 때 사용
+List<Shadow> getTextPopShadow(Color color, double radius, {int intencity = 2}) {
+  final adjustedColor = color.saturate(0.5);
 
-  return [
-    Shadow(
+  Shadow create(int intencity) {
+    return Shadow(
       color: adjustedColor,
-      blurRadius: adjustedRadius,
-    ),
-    Shadow(
-      color: adjustedColor,
-      blurRadius: adjustedRadius,
-    ),
-  ];
+      blurRadius: radius * intencity,
+    );
+  }
+
+  return List.generate(intencity, (index) => create(index + 1));
 }
 
 List<Shadow> getTextOutline([double strokeWidth = 2, Color strokeColor = Colors.black]) {

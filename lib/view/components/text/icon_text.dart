@@ -13,6 +13,7 @@ class IconText extends StatelessWidget {
   final StrokeType? strokeStyle;
   final Color? strokeColor;
   final double? strokeWidth;
+  final double? iconSpace;
 
   const IconText(
     this.text, {
@@ -27,6 +28,7 @@ class IconText extends StatelessWidget {
     this.strokeStyle,
     this.strokeColor,
     this.strokeWidth,
+    this.iconSpace,
   }) : assert(icon != null || iconData != null);
 
   Widget _resolveIcon() {
@@ -119,7 +121,7 @@ class IconText extends StatelessWidget {
       crossAxisAlignment: _resolveCrossAxisAlignment(),
       children: [
         _resolveIcon(),
-        SizedBox(width: _resolveSpace()),
+        SizedBox(width: iconSpace ?? _resolveSpace()),
         Text(
           text,
           style: style,

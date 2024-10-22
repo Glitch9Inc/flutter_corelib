@@ -19,13 +19,13 @@ abstract class MyDialog {
   static BaseDialogCloseButton closeButton = const MyDialogCloseButton();
   static final _logger = Logger('MyDialog');
 
-  // Callbacks
-  static VoidCallback? onPopupShow;
-  static VoidCallback? onPopupClose;
-  static VoidCallback? onOverlayShow;
-  static VoidCallback? onOverlayClose;
-  static VoidCallback? onFullscreenShow;
-  static VoidCallback? onFullscreenClose;
+  // Sfx Callbacks
+  static VoidCallback? sfxOnPopupShow;
+  static VoidCallback? sfxOnPopupClose;
+  static VoidCallback? sfxOnOverlayShow;
+  static VoidCallback? sfxOnOverlayClose;
+  static VoidCallback? sfxOnFullscreenShow;
+  static VoidCallback? sfxOnFullscreenClose;
 
   // Message callbacks
   static VoidCallback? onInfoDialogShow;
@@ -37,6 +37,7 @@ abstract class MyDialog {
   static VoidCallback? onCloseSingleUse;
 
   static DialogType currentDialogType = DialogType.popup;
+  static RxBool showCloseButton = true.obs;
 
   // Getters
   static double get dialogWidth => Get.width * 0.84;
@@ -49,10 +50,13 @@ abstract class MyDialog {
     if (overrideOnShow != null) {
       overrideOnShow();
     } else {
-      onPopupShow?.call();
+      sfxOnPopupShow?.call();
     }
 
     currentDialogType = DialogType.popup;
+
+    // UI 변경을 다음 프레임까지 지연시키기 위해 좀 기다림
+    await SchedulerBinding.instance.endOfFrame;
 
     await Get.dialog(
       PopupMaterial(
@@ -67,25 +71,10 @@ abstract class MyDialog {
     VoidCallback? overrideOnClose,
     bool ignoreOnClose = false,
   }) async {
-    if (!ignoreOnClose) {
-      if (overrideOnClose != null) {
-        overrideOnClose();
-      } else {
-        if (currentDialogType == DialogType.popup) {
-          onPopupClose?.call();
-        } else if (currentDialogType == DialogType.overlay) {
-          onOverlayClose?.call();
-        } else if (currentDialogType == DialogType.fullscreen) {
-          onFullscreenClose?.call();
-        }
-      }
-    }
-
     if (onCloseSingleUse != null) {
       onCloseSingleUse!();
       onCloseSingleUse = null;
     }
-
     // UI 변경을 다음 프레임까지 지연시키기 위해 좀 기다림
     await SchedulerBinding.instance.endOfFrame;
 
@@ -93,6 +82,20 @@ abstract class MyDialog {
       Get.back();
     } else {
       Get.close(count);
+    }
+
+    if (!ignoreOnClose) {
+      if (overrideOnClose != null) {
+        overrideOnClose();
+      } else {
+        if (currentDialogType == DialogType.popup) {
+          sfxOnPopupClose?.call();
+        } else if (currentDialogType == DialogType.overlay) {
+          sfxOnOverlayClose?.call();
+        } else if (currentDialogType == DialogType.fullscreen) {
+          sfxOnFullscreenClose?.call();
+        }
+      }
     }
   }
 
@@ -215,15 +218,20 @@ abstract class MyDialog {
     );
   }
 
-  static Future<void> notYetImplementedDialog([String? contentName]) async {
+  static Future<void> notYetImplemented([String? contentName]) async {
     String message = contentName == null
         ? 'This feature is not yet implemented.\n\n이 기능은 준비중입니다.'
-        : 'The $contentName feature is not yet implemented.\n\n$contentName 기능은 준비중입니다.';
+        : 'The $contentName feature is not yet implemented.';
 
     await infoDialog(
       title: 'Not Yet Implemented',
       message: message,
-      image: Image.asset('assets/images/icons/ui/Icon_HammerEdit.png', width: 120, height: 120),
+      image: Image.asset(
+        'assets/images/icons/item/ItemIcon_Hammer.Png',
+        width: 120,
+        height: 120,
+        fit: BoxFit.fitHeight,
+      ),
     );
   }
 
@@ -283,12 +291,16 @@ abstract class MyDialog {
     double? width,
   }) async {
     currentDialogType = DialogType.overlay;
+    MyDialog.showCloseButton.value = showCloseButton;
 
     if (overrideOnShow != null) {
       overrideOnShow();
     } else {
-      onOverlayShow?.call();
+      sfxOnOverlayShow?.call();
     }
+
+    // UI 변경을 다음 프레임까지 지연시키기 위해 좀 기다림
+    await SchedulerBinding.instance.endOfFrame;
 
     await Get.dialog(
       barrierColor: backgroundColor ?? transparentBlackW700,
@@ -296,17 +308,12 @@ abstract class MyDialog {
       useSafeArea: false,
       PopupMaterial(
         animateScale: false,
-        child: Dialog(
-          backgroundColor: Colors.transparent,
-          insetPadding: EdgeInsets.zero, // 패딩 제거
-          child: OverlayContainer(
-            showCloseButton: showCloseButton,
-            title: title,
-            buttons: buttons,
-            width: width,
-            onClose: onClose,
-            child: overlayWidget,
-          ),
+        child: OverlayContainer(
+          title: title,
+          buttons: buttons,
+          width: width,
+          onClose: onClose,
+          child: overlayWidget,
         ),
       ),
     );
@@ -321,8 +328,11 @@ abstract class MyDialog {
     if (overrideOnShow != null) {
       overrideOnShow();
     } else {
-      onFullscreenShow?.call();
+      sfxOnFullscreenShow?.call();
     }
+
+    // UI 변경을 다음 프레임까지 지연시키기 위해 좀 기다림
+    await SchedulerBinding.instance.endOfFrame;
 
     await Get.to(
       () => fullscreenWidget,

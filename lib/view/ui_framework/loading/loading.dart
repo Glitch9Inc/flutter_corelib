@@ -1,39 +1,63 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_corelib/flutter_corelib.dart';
 
-abstract class Loading {
-  static Widget loadingWidget = const LoadingWidget();
+mixin LoadingWidgetMixin on Widget {
+  LoadingControllerBase get controller;
+}
 
-  static void set(bool value) {
-    if (value) {
-      show();
-    } else {
-      hide();
+abstract class Loading {
+  static LoadingControllerBase? _currentController;
+  static bool _loadingStarted = false;
+
+  static void show(
+    LoadingWidgetMixin loadingWidget, {
+    Color? backgroundColor,
+  }) {
+    _loadingStarted = true;
+    _currentController = loadingWidget.controller;
+
+    Get.dialog(
+      loadingWidget,
+      barrierDismissible: false,
+      barrierColor: backgroundColor,
+    );
+  }
+
+  static void internalStart(LoadingControllerBase controller) {
+    _loadingStarted = true;
+    _currentController = controller;
+  }
+
+  static void next() {
+    if (!_loadingStarted) return;
+    if (_currentController == null) {
+      throw Exception('Loading controller is null');
+    }
+    if (_currentController is ManualLoadingController) {
+      (_currentController as ManualLoadingController).next();
     }
   }
 
-  static void show() {
-    MyDialog.showOverlay(loadingWidget, showCloseButton: false);
+  static void complete({bool force = false}) {
+    if (_currentController == null) {
+      throw Exception('Loading controller is null');
+    }
+    if (!force && _currentController!.isCompleted.value) {
+      return;
+    }
+    _currentController!.complete();
+    hide();
   }
 
-  static void hide() {
-    MyDialog.close(ignoreOnClose: true);
-  }
-}
-
-class LoadingWidget extends StatelessWidget {
-  final double backgroundOpacity;
-  const LoadingWidget({super.key, this.backgroundOpacity = 0.5});
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: Colors.black.withOpacity(backgroundOpacity), // transparentBlackW500 유사 색상
-      child: const Center(
-        child: CircularProgressIndicator(
-          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-        ),
-      ),
-    );
+  static void hide({bool force = false}) {
+    if (_currentController == null) {
+      throw Exception('Loading controller is null');
+    }
+    if (!force && _currentController!.isCompleted.value) {
+      return;
+    }
+    Get.back();
+    _currentController = null;
+    _loadingStarted = false;
   }
 }

@@ -7,15 +7,19 @@ class Labeled extends StatelessWidget {
     required this.label,
     required this.child,
     this.bottomOffset = 2.5,
+    this.childBottomOffset,
     this.textStyle,
     this.strokeStyle,
+    this.maxLines = 1,
   });
 
   final String label;
   final Widget child;
   final double bottomOffset;
+  final double? childBottomOffset;
   final TextStyle? textStyle;
   final StrokeStyle? strokeStyle;
+  final int maxLines;
 
   @override
   Widget build(BuildContext context) {
@@ -23,17 +27,22 @@ class Labeled extends StatelessWidget {
       alignment: Alignment.center,
       clipBehavior: Clip.none,
       children: [
-        child,
+        if (childBottomOffset != null)
+          Positioned(
+            bottom: childBottomOffset,
+            child: child,
+          )
+        else
+          child,
         Positioned(
-          bottom: 2.5,
+          bottom: bottomOffset,
           child: StrokeText(
             label,
-            style: textStyle ??
-                Get.textTheme.bodyMedium!.copyWith(
-                  height: 1,
-                ),
+            style: textStyle ?? Get.textTheme.bodyMedium!.copyWith(height: 1),
             strokeStyle: strokeStyle,
             textAlign: TextAlign.center,
+            maxLines: maxLines,
+            minFontSize: 10,
           ),
         ),
       ],

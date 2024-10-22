@@ -1,15 +1,14 @@
 import 'package:path_provider/path_provider.dart';
+import 'flutter_dir_type.dart';
 
-import 'directory_type.dart';
-
-class FilePath {
-  final DirectoryType directoryType;
+class FlutterFilePath {
+  final FlutterDirType directoryType;
   final String fileName;
   final String fileExtension;
   final String filePath;
   String? _fullPath;
 
-  FilePath({
+  FlutterFilePath({
     required this.directoryType,
     required this.filePath,
   })  : fileName = filePath.split('/').last,
@@ -30,9 +29,9 @@ class FilePath {
 
   Future<String?> _getDirectoryPath() async {
     switch (directoryType) {
-      case DirectoryType.temp:
+      case FlutterDirType.temp:
         return (await getTemporaryDirectory()).path;
-      case DirectoryType.persistentDataPath:
+      case FlutterDirType.persistentDataPath:
         return (await getApplicationDocumentsDirectory()).path;
     }
   }

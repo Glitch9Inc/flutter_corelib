@@ -2,38 +2,61 @@ import 'dart:async';
 
 import 'package:get/get.dart';
 
-abstract class LoadingController {
+import 'loading.dart';
+
+abstract class LoadingControllerBase {
   String get message;
   double get percentage;
-}
+  final bool autoClose;
+  final RxBool isCompleted = false.obs;
 
-class ManualLoadingController extends LoadingController {
-  final List<String> loadingMessages;
-  RxInt currentMessageIndex = 0.obs;
+  LoadingControllerBase({this.autoClose = true});
 
-  ManualLoadingController(this.loadingMessages);
-
-  @override
-  String get message => loadingMessages[currentMessageIndex.value];
-
-  @override
-  double get percentage => currentMessageIndex.value / loadingMessages.length;
-
-  void next() {
-    currentMessageIndex.value = (currentMessageIndex.value + 1) % loadingMessages.length;
+  void complete() {
+    isCompleted.value = true;
+    if (autoClose) {
+      Loading.hide(force: true);
+    }
   }
 }
 
-class TimeBasedLoadingController extends LoadingController {
+class ManualLoadingController extends LoadingControllerBase {
+  final List<String> entries;
+  final RxInt currentMessageIndex = 0.obs;
+
+  ManualLoadingController({
+    required this.entries,
+    super.autoClose = true,
+  });
+
+  @override
+  String get message => entries[currentMessageIndex.value];
+
+  @override
+  double get percentage => currentMessageIndex.value / entries.length;
+
+  void next() {
+    currentMessageIndex.value = (currentMessageIndex.value + 1) % entries.length;
+    print('ManualLoadingController: ${currentMessageIndex.value}');
+    if (currentMessageIndex.value == 0) {
+      complete();
+    }
+  }
+}
+
+class TimeBasedLoadingController extends LoadingControllerBase {
   final Duration duration;
   final RxString _loadingMessage = 'Now loading...'.obs;
   final RxDouble _percentage = 0.0.obs;
+  final bool autoComplete;
   Timer? _timer;
 
   TimeBasedLoadingController(
     this.duration, {
     String? initialMessage,
     bool startImmediately = true,
+    this.autoComplete = true,
+    super.autoClose = true,
   }) {
     if (initialMessage != null) {
       _loadingMessage.value = initialMessage;
@@ -60,6 +83,9 @@ class TimeBasedLoadingController extends LoadingController {
       if (_percentage.value >= 1.0) {
         _timer?.cancel();
         _percentage.value = 1.0; // 최대값 1.0으로 설정
+        if (autoComplete) {
+          complete();
+        }
       }
 
       print('총 로딩시간: ${duration.inMilliseconds}ms, 현재 퍼센티지: ${_percentage.value}');

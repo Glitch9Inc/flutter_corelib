@@ -5,6 +5,7 @@ class SelectableContainer extends StatelessWidget {
   // Custom properties
   final bool isSelected;
   final Widget? selectedWidget;
+  final double selectedBorderWidth;
 
   // Container properties
   final Widget? child;
@@ -24,6 +25,7 @@ class SelectableContainer extends StatelessWidget {
   const SelectableContainer({
     super.key,
     required this.isSelected,
+    this.selectedBorderWidth = 3,
     this.selectedWidget,
     this.alignment,
     this.padding,
@@ -72,7 +74,7 @@ class SelectableContainer extends StatelessWidget {
             child: selectedWidget ??
                 _container(
                     decorationParam: BoxDecoration(
-                  border: Border.all(color: routinaGreenW300, width: 2),
+                  border: Border.all(color: routinaGreenW300, width: selectedBorderWidth),
                   borderRadius: (decoration is BoxDecoration) ? (decoration as BoxDecoration).borderRadius : null,
                 )),
           ),

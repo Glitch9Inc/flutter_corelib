@@ -14,6 +14,8 @@ enum UIColor {
   gold,
   pink,
   indigo,
+  darkGrey,
+  teal,
 }
 
 extension UIColorExt on UIColor {

@@ -3,26 +3,35 @@ library flutter_corelib;
 export 'system/system_global.dart';
 
 // models
-export 'system/models/localized_string_type.dart';
+export 'system/models/key_type.dart';
 export 'system/models/date.dart';
 export 'system/models/weekday.dart';
 export 'system/models/day_period.dart';
 export 'system/models/awaiter.dart';
 export 'system/models/expiration.dart';
+export 'system/models/expiring_field.dart';
+
+// exceptions
+export 'system/exceptions/type_exception.dart';
 
 // cache
-export 'system/io/cache_data/cache.dart';
-export 'system/io/cache_data/cache_list.dart';
-export 'system/io/cache_data/cache_map.dart';
-export 'system/io/cache_data/cache_list_map.dart';
-export 'system/io/cache_data/date_based_cache_map.dart';
+export 'system/io/cache/cache.dart';
+export 'system/io/cache/cache_list.dart';
+export 'system/io/cache/cache_map.dart';
+export 'system/io/cache/cache_list_map.dart';
+export 'system/io/cache/date_based_cache_map.dart';
 
 // io
-export 'system/io/core/file_location.dart';
-export 'system/io/core/file_path.dart';
-export 'system/io/core/directory_type.dart';
-export 'system/io/spreadsheet/google_spreadsheet.dart';
-export 'system/io/spreadsheet/google_spreadsheet_manager.dart';
+export 'system/io/flutter_path/flutter_file_location.dart';
+export 'system/io/flutter_path/flutter_file_path.dart';
+export 'system/io/flutter_path/flutter_dir_type.dart';
+
+// database
+export 'database/spreadsheet/spreadsheet_database.dart';
+export 'database/spreadsheet/google_spreadsheet_manager.dart';
+export 'database/csv_x/csvx_database.dart';
+export 'database/csv_x/csvx_controller.dart';
+export 'database/csv_x/csvx_localization.dart';
 
 // shared preference wrapper (unity-style)
 export 'system/prefs/playerprefs.dart';
@@ -31,16 +40,18 @@ export 'system/prefs/prefs_list.dart';
 export 'system/prefs/prefs_map.dart';
 
 // utils
-export 'system/utils/enum_util.dart';
+export 'system/utils/parse_enum.dart';
 export 'system/utils/firestore_converter.dart';
 export 'system/utils/color_util.dart';
-export 'system/utils/uuid_util.dart';
+export 'system/utils/my_uuid.dart';
 
 // extensions
 export 'system/ext/color_ext.dart';
 export 'system/ext/date_time_ext.dart';
+export 'system/ext/date_time_map_ext.dart';
 export 'system/ext/icon_data_ext.dart';
-export 'system/ext/number_ext.dart';
+export 'system/ext/double_ext.dart';
+export 'system/ext/int_ext.dart';
 export 'system/ext/string_ext.dart';
 export 'system/ext/nullcheck_ext.dart';
 export 'system/ext/map_ext.dart';
@@ -48,14 +59,14 @@ export 'system/ext/list_ext.dart';
 export 'system/ext/weekday_ext.dart';
 export 'system/ext/time_of_day_ext.dart';
 export 'system/ext/object_ext.dart';
+export 'system/ext/int_map_ext.dart';
 
 // constants
 export 'system/const/color_const.dart';
 
 // database
-export 'database/database_mixin.dart';
-export 'database/database_model_mixin.dart';
-export 'database/database_model.dart';
+export 'database/core_mixin/db_table_mixin.dart';
+export 'database/core_mixin/db_model_mixin.dart';
 
 // view components - common
 export 'view/components/common/dot.dart';
@@ -76,12 +87,15 @@ export 'view/components/etc/outlined_icon.dart';
 export 'view/components/etc/halftone_gradient_container.dart';
 export 'view/components/etc/search_bar.dart';
 
+// widgets - text
+export 'view/components/text/icon_text.dart';
+export 'view/components/text/stroke_text.dart';
+export 'view/components/text/double_stroke_text.dart';
+
 // widgets - wrappers
-export 'view/components/wrappers/icon_text.dart';
 export 'view/components/wrappers/keep_alive_page.dart';
 export 'view/components/wrappers/align_padding.dart';
 export 'view/components/wrappers/expanded_padding.dart';
-export 'view/components/wrappers/stroke_text.dart';
 export 'view/components/wrappers/scaled_switch.dart';
 
 // widgets - backgrounds
@@ -95,6 +109,7 @@ export 'view/components/backgrounds/animated_pattern_background.dart';
 export 'view/components/buttons/button_entry.dart';
 export 'view/components/buttons/expandable_button.dart';
 export 'view/components/buttons/image_button.dart';
+export 'view/components/buttons/animated_gesture_detector.dart';
 
 // widgets - others
 export 'view/components/sort_filter/sort_filter.dart';
@@ -132,8 +147,8 @@ export 'view/ui_framework/transition/tween_direction.dart';
 
 // ui framework - loading
 export 'view/ui_framework/loading/loading.dart';
+export 'view/ui_framework/loading/quick_loading.dart';
 export 'view/ui_framework/loading/loading_controller.dart';
-export 'view/ui_framework/loading/ui_loading_widget.dart';
 
 // ui framework - data models
 export 'view/ui_framework/models_data/position.dart';
@@ -151,11 +166,6 @@ export 'view/ui_framework/models_enum/overflow_behaviour.dart';
 // ui framework - utility models
 export 'view/ui_framework/models_utility/responsive.dart';
 export 'view/ui_framework/models_utility/simple_sprite_animation.dart';
-
-// ui framework - inner widget
-export 'view/ui_framework/inner_widget/inner_widget_mixin.dart';
-export 'view/ui_framework/inner_widget/stateless_inner_widget.dart';
-export 'view/ui_framework/inner_widget/stateful_inner_widget.dart';
 
 // ui framework - easy components
 export 'view/ui_framework/easy_components/easy_scaffold.dart';
@@ -188,6 +198,7 @@ export 'view/ui_framework/my_dialog/models_utility/close_dialog_callback.dart';
 
 // ui framework - color library
 export 'view/ui_framework/models_enum/ui_color.dart';
+export 'view/ui_framework/models_enum/widget_child_position.dart';
 export 'view/ui_framework/color_library/routina_colors.dart';
 
 // network
@@ -201,8 +212,8 @@ export 'network/client/http_method.dart';
 export 'network/client/dio_logging_intercepter.dart';
 export 'network/client/http_request_timer.dart';
 export 'network/services/object_provider.dart';
-export 'network/crud/base_crud_controller.dart';
-export 'network/crud/crud_models.dart';
+export 'network/crud/base_crud_client.dart';
+export 'network/crud/crud_model.dart';
 
 // external libraries
 export 'package:get/get.dart' hide Condition, Response, FormData, MultipartFile;

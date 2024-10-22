@@ -1,4 +1,4 @@
-enum FileLocation {
+enum FlutterFileLocation {
   assets,
   file,
   http,

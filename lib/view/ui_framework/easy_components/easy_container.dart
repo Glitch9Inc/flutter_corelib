@@ -2,83 +2,112 @@ import 'package:flutter/material.dart';
 import 'package:flutter_corelib/flutter_corelib.dart';
 
 class EasyContainer extends StatelessWidget {
+  static const Color defaultBorderColor = routinaCharcoalW900;
+
+  // 기본
   final double? width;
   final double? height;
-  final double? borderRadius;
   final EdgeInsets? margin;
   final EdgeInsets? padding;
+  final Widget? child;
+  final Clip clipBehavior;
+  final Matrix4? transform;
+  final AlignmentGeometry alignment;
+
+  // 색상
   final Color? color;
   final UIColor uiColor;
-  final Widget? child;
-  final double containerThickness;
+
+  // decoration
+  final double thickness;
+  final double borderRadius;
   final double borderWidth;
-  final BorderDirection borderDirection;
+  final Color? borderColor;
+  final Gradient? gradient;
+  final BoxBorder? border;
+  final BorderDirection? borderDirection;
+  final bool noShadow;
+  final bool noPattern;
 
   const EasyContainer({
     super.key,
-    this.color,
-    this.uiColor = UIColor.blue,
     this.width,
     this.height,
     this.margin,
     this.padding,
-    this.borderRadius,
-    this.borderWidth = 2,
-    this.borderDirection = BorderDirection.all,
-    this.containerThickness = 3,
+    this.transform,
+    this.alignment = Alignment.center,
+    this.clipBehavior = Clip.none,
+    this.color,
+    this.uiColor = UIColor.blue,
+    this.borderRadius = 20,
+    this.borderWidth = 1,
+    this.borderColor,
+    this.borderDirection,
+    this.thickness = 2,
+    this.gradient,
+    this.border,
     this.child,
+    this.noShadow = false,
+    this.noPattern = false,
   });
 
   BoxDecoration _resolveDecoration() {
-    if (uiColor == UIColor.gold) {
-      Color lightColor = routinaYellowW300;
-      Color darkColor = routinaBrownW200;
+    // topColor is the main color which is darker than botColor
+    final topColor = color ?? uiColor.color[300]!;
 
-      return BoxDecoration(
-        borderRadius: borderDirection.resolveBorderRadius(borderRadius),
-        gradient: LinearGradient(
+    // botColor is the color which is brighter than topColor
+    final botColor = color != null ? color!.brighten(0.1) : uiColor.color[600]!.saturate(0.2);
+
+    final filterColor = color != null ? color!.darken(0.1) : uiColor.color[700]!;
+
+    final finalBorderColor = borderColor ?? defaultBorderColor;
+
+    final finalBorderRadius = borderDirection == null
+        ? BorderRadius.circular(borderRadius)
+        : borderDirection!.resolveBorderRadius(borderRadius);
+
+    final finalBorder = border ?? borderDirection?.resolveBorder(finalBorderColor, borderWidth);
+
+    final finalGradient = gradient ??
+        LinearGradient(
           colors: [
-            lightColor,
-            darkColor,
+            topColor,
+            botColor,
           ],
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
-        ),
-        border: borderDirection.resolveBorder(darkColor, borderWidth),
-        boxShadow: getCartoonBoxShadow(color: darkColor.darken(0.15), thickness: containerThickness),
-      );
-    }
-
-    Color keyColor = color ?? uiColor.color[500]!;
-    Color lightColor = color != null ? color!.brighten(0.2) : uiColor.color[300]!;
+        );
 
     return BoxDecoration(
-      borderRadius: borderDirection.resolveBorderRadius(borderRadius),
-      gradient: LinearGradient(
-        colors: [
-          keyColor,
-          lightColor,
-        ],
-        begin: Alignment.topCenter,
-        end: Alignment.bottomCenter,
-      ),
-      border: borderDirection.resolveBorder(keyColor, borderWidth),
-      boxShadow: getCartoonBoxShadow(color: keyColor.darken(0.15), thickness: containerThickness),
+      image: noPattern
+          ? null
+          : DecorationImage(
+              image: const AssetImage('assets/images/btn_pattern.png'),
+              fit: BoxFit.cover,
+              colorFilter: ColorFilter.mode(filterColor, BlendMode.srcATop),
+            ),
+      borderRadius: finalBorderRadius,
+      border: finalBorder,
+      gradient: finalGradient,
+      boxShadow: getCartoonBoxShadow(color: finalBorderColor, thickness: thickness, noShadow: noShadow),
     );
   }
 
   @override
   Widget build(BuildContext context) {
+    final decoration = _resolveDecoration();
+
     return Container(
-      alignment: Alignment.center,
+      alignment: alignment,
+      clipBehavior: clipBehavior,
+      transform: transform,
       width: width,
       height: height,
       margin: margin,
       padding: padding,
-      decoration: _resolveDecoration(),
-      child: Center(
-        child: child,
-      ),
+      decoration: decoration,
+      child: child,
     );
   }
 }

@@ -1,17 +1,21 @@
 import 'package:flutter_corelib/flutter_corelib.dart';
 
-mixin DatabaseMixin<T extends DatabaseModelMixin> {
+mixin DbTableMixin<T extends DbModelMixin> {
   bool isInit = false;
-  bool _isInitializing = false;
+  Future<void>? _initFuture;
 
-  @protected
   Future<void> init() async {
     if (isInit) return;
-    if (_isInitializing) return;
-    _isInitializing = true;
+
+    // 초기화가 진행 중이라면 동일한 Future를 반환
+    _initFuture ??= _initializeDatabase();
+
+    await _initFuture;
+  }
+
+  Future<void> _initializeDatabase() async {
     await loadDatabase();
     isInit = true;
-    _isInitializing = false;
   }
 
   @protected
@@ -20,7 +24,7 @@ mixin DatabaseMixin<T extends DatabaseModelMixin> {
   @protected
   T fromMap(Map<String, Object?> map);
 
-  T? get(String id);
+  T? get(String id, [T? defaultValue]);
 
   List<T?>? toList();
 

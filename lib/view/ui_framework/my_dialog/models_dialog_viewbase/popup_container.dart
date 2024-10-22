@@ -11,6 +11,7 @@ class PopupContainer extends StatelessWidget {
   final double? width;
   final bool showCloseButton;
   final Color? backgroundColor;
+  final Widget? footer;
 
   const PopupContainer({
     super.key,
@@ -23,6 +24,7 @@ class PopupContainer extends StatelessWidget {
     this.height,
     this.width,
     this.backgroundColor,
+    this.footer,
   });
 
   @override
@@ -55,14 +57,18 @@ class PopupContainer extends StatelessWidget {
                     maxLines: 1,
                     minFontSize: 10,
                     strokeStyle: StrokeStyle(
-                      type: StrokeType.blurred,
+                      type: StrokeType.shadow,
                       color: bgColor.darken(0.1),
                     ),
                   ),
                 ),
                 const SizedBox(height: 20),
               ],
-              child!,
+              if (child != null) child!,
+              if (footer != null) ...[
+                const SizedBox(height: 10),
+                footer!,
+              ],
             ],
           ),
         ),

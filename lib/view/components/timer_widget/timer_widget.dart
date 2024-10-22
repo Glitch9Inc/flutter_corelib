@@ -18,6 +18,7 @@ class TimerWidget extends StatefulWidget {
   final String? timerImagePath;
   final Color color;
   final Color? textColor;
+  final EdgeInsets? margin;
   final EdgeInsets padding;
   final Alignment alignment;
   final double iconScale;
@@ -32,6 +33,7 @@ class TimerWidget extends StatefulWidget {
     this.color = Colors.black,
     this.textColor,
     this.text,
+    this.margin,
     this.padding = const EdgeInsets.only(right: 8),
     this.timerImagePath,
     this.alignment = Alignment.centerLeft,
@@ -134,6 +136,7 @@ class _TimerWidgetState extends State<TimerWidget> {
       alignment: widget.alignment,
       children: [
         Container(
+          margin: widget.margin,
           padding: widget.padding,
           decoration: BoxDecoration(
             color: widget.color,

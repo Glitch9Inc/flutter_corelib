@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 
 extension DoubleExt on double {
   get radians => this * (3.1415926535897932 / 180.0);
@@ -11,14 +10,4 @@ extension DoubleExt on double {
   get allInsets => EdgeInsets.all(toDouble());
   get sizedBold => TextStyle(fontSize: this, fontWeight: FontWeight.bold);
   get bold => const TextStyle(fontWeight: FontWeight.bold);
-}
-
-extension IntExt on int {
-  get secs => Duration(seconds: this);
-  get millis => Duration(milliseconds: this);
-  get color => Colors.primaries[(this + 1) % Colors.primaries.length].withAlpha(150);
-  get formattedString {
-    final formatter = NumberFormat('#,###');
-    return formatter.format(this);
-  }
 }

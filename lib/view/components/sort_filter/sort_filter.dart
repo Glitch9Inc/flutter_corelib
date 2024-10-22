@@ -60,7 +60,7 @@ class _SortFilterState extends State<SortFilter> {
     return EasyContainer(
       //alignment: Alignment.center,
       height: widget.listItemHeight - 5,
-      containerThickness: 1,
+      thickness: 1,
       width: width,
       // decoration: BoxDecoration(
       //   color: color,
@@ -78,7 +78,7 @@ class _SortFilterState extends State<SortFilter> {
       text,
       style: _textStyle,
       strokeStyle: StrokeStyle(
-        type: StrokeType.blurred,
+        type: StrokeType.shadow,
         color: color,
       ),
     );

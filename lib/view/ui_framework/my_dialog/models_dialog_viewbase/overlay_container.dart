@@ -3,7 +3,7 @@ import 'package:flutter_corelib/flutter_corelib.dart';
 
 class OverlayContainer extends StatelessWidget {
   final Widget child;
-  final bool showCloseButton;
+
   final String? title;
   final List<Widget>? buttons;
   final double? width;
@@ -12,7 +12,6 @@ class OverlayContainer extends StatelessWidget {
   const OverlayContainer({
     super.key,
     required this.child,
-    this.showCloseButton = true,
     this.title,
     this.buttons,
     this.width,
@@ -48,8 +47,8 @@ class OverlayContainer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: Get.height * 0.9,
-      width: width ?? Get.width * 0.9,
+      height: Get.height,
+      width: width ?? Get.width,
       child: Stack(children: [
         if (title != null) ...[
           Padding(
@@ -77,14 +76,19 @@ class OverlayContainer extends StatelessWidget {
               children: buttons!,
             ),
           ),
-        ] else if (showCloseButton) ...[
-          Positioned(
-            left: 0,
-            right: 0,
-            bottom: 30,
-            child: _circledCloseButton(),
-          ),
         ],
+        Obx(() {
+          if (MyDialog.showCloseButton.value) {
+            return Positioned(
+              left: 0,
+              right: 0,
+              bottom: 30,
+              child: _circledCloseButton(),
+            );
+          } else {
+            return Container();
+          }
+        }),
       ]),
     );
   }

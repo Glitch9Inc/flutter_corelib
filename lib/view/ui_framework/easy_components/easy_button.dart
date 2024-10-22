@@ -1,112 +1,130 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_corelib/flutter_corelib.dart';
 
+import 'easy_widget_util.dart';
+
 class EasyButton extends StatelessWidget {
   static VoidCallback? sfxOnPressed;
 
-  // button stuff
+  // basic properties
   final double? width;
-  final double? height;
-  final VoidCallback? onPressed;
-  final double borderRadius;
+  final double height;
   final EdgeInsets? margin;
   final EdgeInsets padding;
-  final Color? color;
-  final UIColor uiColor;
-  final double? containerThickness;
-  final bool interactable;
+  final AlignmentGeometry alignment;
 
-  // contents
-  final Widget? child;
+  // color properties
+  final Color? color;
+  final UIColor? uiColor;
+
+  // decoration properties
+  final double borderRadius;
+  final double borderWidth;
+  final Color? borderColor;
+  final Gradient? gradient;
+  final BoxBorder? border;
+  final BorderDirection? borderDirection;
+  final double? thickness;
+  final bool noShadow;
+
+  // button properties
+  final VoidCallback? onPressed;
+  final bool interactable;
+  final bool noPattern;
 
   EasyButton({
     super.key,
     this.onPressed,
+    this.interactable = true,
     this.width,
-    this.height,
+    this.height = 48,
+    this.alignment = Alignment.center,
     this.margin,
     this.padding = const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
     this.color,
-    this.uiColor = UIColor.blue,
+    this.uiColor,
+    this.border,
     this.borderRadius = 20,
-    this.containerThickness,
-    this.interactable = true,
-    Widget? child,
+    this.borderWidth = 1,
+    this.borderColor,
+    this.borderDirection,
+    this.gradient,
+    this.thickness,
+    this.noShadow = false,
+    this.noPattern = false,
     String? text,
+    double? fontSize,
     TextStyle? textStyle,
     Widget? icon,
+    double? iconSize,
     IconData? iconData,
-    double? fontSize,
-  }) : child = _resolveChildWidget(
+    Widget? child,
+  }) : _child = EasyWidgetUtil.resolveChild(
           child: child,
           text: text,
           textStyle: textStyle,
           icon: icon,
           iconData: iconData,
           fontSize: fontSize,
+          iconSize: iconSize,
         );
 
-  static Widget? _resolveChildWidget({
-    required Widget? child,
-    required String? text,
-    required TextStyle? textStyle,
-    required Widget? icon,
-    required IconData? iconData,
-    required double? fontSize,
+  factory EasyButton.small({
+    VoidCallback? onPressed,
+    bool interactable = true,
+    double height = 34,
+    double? width,
+    AlignmentGeometry alignment = Alignment.center,
+    EdgeInsets? margin,
+    Color? color,
+    UIColor? uiColor,
+    Border? border,
+    double borderWidth = 1,
+    Color? borderColor,
+    BorderDirection? borderDirection,
+    Gradient? gradient,
+    double? thickness,
+    bool noShadow = false,
+    String? text,
+    Widget? icon,
+    double? iconSize,
+    IconData? iconData,
+    Widget? child,
   }) {
-    if (child != null) {
-      return child;
-    }
-
-    Widget? iconWidget = _resolveIcon(icon: icon, iconData: iconData);
-    if (iconWidget != null && text != null) {
-      return Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          iconWidget,
-          const SizedBox(width: 8),
-          _resolveTextWidget(text, textStyle, fontSize),
-        ],
-      );
-    } else if (text != null) {
-      return _resolveTextWidget(text, textStyle, fontSize);
-    } else if (iconWidget != null) {
-      return iconWidget;
-    } else {
-      return null;
-    }
-  }
-
-  static Widget? _resolveIcon({
-    required Widget? icon,
-    required IconData? iconData,
-  }) {
-    if (icon != null) {
-      return icon;
-    } else if (iconData != null) {
-      return Icon(iconData);
-    }
-    return null;
-  }
-
-  static Widget _resolveTextWidget(
-    String text,
-    TextStyle? textStyle,
-    double? fontSize,
-  ) {
-    return Text(
-      text,
-      style: textStyle ??
-          Get.textTheme.bodyLarge!.copyWith(
-            fontSize: fontSize ?? 16,
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
-          ),
+    return EasyButton(
+      onPressed: onPressed,
+      interactable: interactable,
+      width: width,
+      height: height,
+      alignment: alignment,
+      margin: margin,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      color: color,
+      uiColor: uiColor,
+      border: border,
+      noPattern: true,
+      borderRadius: 12,
+      borderWidth: borderWidth,
+      borderColor: borderColor,
+      borderDirection: borderDirection,
+      gradient: gradient,
+      thickness: thickness,
+      noShadow: noShadow,
+      text: text,
+      textStyle: Get.textTheme.bodySmall!.copyWith(
+        color: Colors.white,
+        fontWeight: FontWeight.bold,
+      ),
+      icon: icon,
+      iconSize: iconSize,
+      iconData: iconData,
+      child: child,
     );
   }
 
-  void _press() {
+  final Widget? _child;
+
+  void _onTap() {
     if (interactable) {
       sfxOnPressed?.call();
       onPressed?.call();
@@ -115,19 +133,37 @@ class EasyButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: _press,
-      child: EasyContainer(
-        width: width,
+    final finalUiColor = interactable ? uiColor ?? UIColor.blue : UIColor.darkGrey;
+    final finalBorder = EasyWidgetUtil.resolveBorder(
+      border: border,
+      borderColor: borderColor ?? EasyContainer.defaultBorderColor,
+      borderWidth: borderWidth,
+      borderDirection: borderDirection,
+      finalUIColor: finalUiColor.color[200]!,
+    );
+
+    return IntrinsicWidth(
+      // 자식의 크기에 맞게 너비가 조정되도록 IntrinsicWidth 사용
+      child: AnimatedGestureDetector(
         height: height,
-        borderRadius: borderRadius,
-        margin: margin,
-        padding: padding,
-        color: color,
-        uiColor: interactable ? uiColor : UIColor.grey,
-        borderDirection: BorderDirection.none,
-        containerThickness: containerThickness ?? 3,
-        child: child,
+        width: width ?? double.infinity,
+        onTap: _onTap,
+        child: EasyContainer(
+          height: height,
+          width: width,
+          alignment: alignment,
+          borderRadius: borderRadius,
+          margin: margin,
+          padding: padding,
+          color: color,
+          uiColor: finalUiColor,
+          border: finalBorder,
+          gradient: gradient,
+          thickness: thickness ?? 2,
+          noShadow: noShadow,
+          noPattern: noPattern,
+          child: Opacity(opacity: interactable ? 1 : 0.5, child: _child),
+        ),
       ),
     );
   }
