@@ -44,7 +44,7 @@ dependencies:
   google_fonts: ^6.2.1
 
   # Api Services
-  cloud_firestore: ^5.0.1
+  cloud_firestore: ^5.5.0
 
   # Google Services
   googleapis: 11.4.0
