@@ -1,4 +1,0 @@
-enum StrokeType {
-  outline,
-  shadow,
-}
