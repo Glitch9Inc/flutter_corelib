@@ -1,64 +1,104 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_corelib/system/models/time_of_day_range.dart';
 
+import 'time_of_day_range.dart';
+
+/// Mutable collection of non-overlapping busy ranges for one local day.
 class DaySchedule {
   final List<TimeOfDayRange> timeRanges;
 
-  DaySchedule({
-    required this.timeRanges,
-  });
+  DaySchedule({required Iterable<TimeOfDayRange> timeRanges})
+      : timeRanges = List<TimeOfDayRange>.of(timeRanges) {
+    _normalize();
+  }
 
-  /// returns true if the given time is not in any of the time ranges
   bool isAvailable(TimeOfDay time) {
     return !timeRanges.any((range) => range.contains(time));
   }
 
   bool isAvailableRange(TimeOfDayRange range) {
-    return !timeRanges.any((existingRange) => existingRange.overlaps(range));
+    return !timeRanges.any((existing) => existing.overlaps(range));
   }
 
   void add(TimeOfDayRange range) {
-    /// should not overlap with existing ranges
-
-    if (!isAvailableRange(range)) {
-      throw ArgumentError('Time range overlaps with existing ranges');
+    if (range.isEmpty || range.isZeroDuration) {
+      throw ArgumentError.value(range, 'range', 'Must have a duration');
     }
-
+    if (!isAvailableRange(range)) {
+      throw ArgumentError('Time range overlaps with an existing range');
+    }
     timeRanges.add(range);
-    _rearrangeAll();
+    _normalize();
   }
 
   void remove(TimeOfDayRange range) {
-    // remove the range that overlaps with the given range
-    final rangesToRemove = timeRanges.where((existingRange) => existingRange.fullyContains(range));
-
-    for (final rangeToRemove in rangesToRemove) {
-      timeRanges.remove(rangeToRemove);
+    if (range.isEmpty || range.isZeroDuration) return;
+    final occupied = _occupancy();
+    for (var minute = 0; minute < _minutesPerDay; minute++) {
+      if (range.contains(_fromMinute(minute))) occupied[minute] = false;
     }
-
-    // remove the range that overlaps with the given range
-    final rangesToSplit = timeRanges.where((existingRange) => existingRange.overlaps(range));
-
-    for (final rangeToSplit in rangesToSplit) {
-      rangeToSplit.split(range);
-    }
-
-    _rearrangeAll();
+    _replaceFromOccupancy(occupied);
   }
 
-  void _rearrangeAll() {
-    // endtime과 startime이 겹치는 경우 합치기
-    timeRanges.sort((a, b) => a.startTime.compareTo(b.startTime));
+  void _normalize() => _replaceFromOccupancy(_occupancy());
 
-    for (var i = 0; i < timeRanges.length - 1; i++) {
-      final current = timeRanges[i];
-      final next = timeRanges[i + 1];
+  List<bool> _occupancy() {
+    return List<bool>.generate(
+      _minutesPerDay,
+      (minute) =>
+          timeRanges.any((range) => range.contains(_fromMinute(minute))),
+      growable: false,
+    );
+  }
 
-      if (current.overlaps(next)) {
-        timeRanges.removeAt(i);
-        timeRanges.removeAt(i);
-        timeRanges.insert(i, TimeOfDayRange(start: current.startTime, end: next.endTime));
+  void _replaceFromOccupancy(List<bool> occupied) {
+    final segments = <(int, int)>[];
+    var minute = 0;
+    while (minute < _minutesPerDay) {
+      if (!occupied[minute]) {
+        minute++;
+        continue;
       }
+      final start = minute;
+      while (minute < _minutesPerDay && occupied[minute]) {
+        minute++;
+      }
+      segments.add((start, minute));
     }
+
+    timeRanges.clear();
+    if (segments.length >= 2 &&
+        segments.first.$1 == 0 &&
+        segments.last.$2 == _minutesPerDay) {
+      final overnight = TimeOfDayRange(
+        start: _fromMinute(segments.last.$1),
+        end: _fromMinute(segments.first.$2),
+      );
+      timeRanges.add(overnight);
+      segments
+        ..removeLast()
+        ..removeAt(0);
+    }
+
+    for (final segment in segments) {
+      timeRanges.add(
+        TimeOfDayRange(
+          start: _fromMinute(segment.$1),
+          end: _fromMinute(segment.$2),
+        ),
+      );
+    }
+    timeRanges.sort(
+      (first, second) =>
+          _toMinute(first.startTime).compareTo(_toMinute(second.startTime)),
+    );
+  }
+
+  static const int _minutesPerDay = 24 * 60;
+
+  static int _toMinute(TimeOfDay value) => value.hour * 60 + value.minute;
+
+  static TimeOfDay _fromMinute(int minute) {
+    final normalized = minute % _minutesPerDay;
+    return TimeOfDay(hour: normalized ~/ 60, minute: normalized % 60);
   }
 }

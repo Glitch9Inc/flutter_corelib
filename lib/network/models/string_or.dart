@@ -24,7 +24,8 @@ class StringOr<T> {
   @override
   bool operator ==(Object other) {
     if (other is StringOr<T>) {
-      return stringValue == other.stringValue && objectValue == other.objectValue;
+      return stringValue == other.stringValue &&
+          objectValue == other.objectValue;
     }
 
     return false;

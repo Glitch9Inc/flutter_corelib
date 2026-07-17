@@ -10,8 +10,15 @@ class Height implements Comparable<Height> {
   /// The total meters of this [Height] object.
   final double _height;
 
-  const Height({double meters = 0, double centimeters = 0, double inches = 0, double feet = 0})
-      : this._meters(meters + centimeters * metersPerCentimeter + inches * metersPerInch + feet * metersPerFoot);
+  const Height(
+      {double meters = 0,
+      double centimeters = 0,
+      double inches = 0,
+      double feet = 0})
+      : this._meters(meters +
+            centimeters * metersPerCentimeter +
+            inches * metersPerInch +
+            feet * metersPerFoot);
 
   const Height._meters(double height) : _height = height + 0;
 

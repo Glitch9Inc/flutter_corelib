@@ -2,7 +2,7 @@
 // network
 export 'network/auth/auth_info.dart';
 export 'network/consts/http_method.dart';
-export 'network/dio_ext/dio_log_intercepter.dart';
+export 'network/dio_ext/dio_log_interceptor.dart';
 export 'network/dio_ext/dio_log_level.dart';
 export 'network/dio_ext/dio_settings.dart';
 export 'network/dio_ext/dio_util.dart';
@@ -21,11 +21,11 @@ export 'prefs/prefs.dart';
 export 'prefs/prefs_list.dart';
 export 'prefs/prefs_map.dart';
 export 'system/audio_manager/audio_file.dart';
-export 'system/audio_manager/audio_manager.dart';
 export 'system/audio_manager/base_audio_manager.dart';
-export 'system/audio_manager/just_audio_player.dart';
 // converters
 export 'system/converters/enum_converter.dart';
+// debug
+export 'system/diagnostics/debug_log.dart';
 // extensions
 export 'system/extensions/date_time_ext.dart';
 export 'system/extensions/date_time_map_ext.dart';
@@ -72,8 +72,6 @@ export 'system/models/weekday.dart';
 export 'system/models/weight.dart';
 // builders
 export 'system/utils/date_time_builder.dart';
-// debug
-export 'system/utils/debug_log.dart';
 export 'system/utils/discord.dart';
 export 'system/utils/my_uuid.dart';
 // utils

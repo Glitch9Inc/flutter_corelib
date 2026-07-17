@@ -1,19 +1,20 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-
 extension DateTimeMapExt on Map<String, DateTime> {
   void setDateTime(String key, DateTime? value) {
     if (value != null) this[key] = value;
   }
+
+  Map<String, String> toIso8601Map() {
+    return map(
+      (key, value) => MapEntry(key, value.toIso8601String()),
+    );
+  }
 }
 
 extension NullableDateTimeMapExt on Map<String, DateTime>? {
-  DateTime getDateTimeOrNowIfNull(String key) {
-    if (this == null) return DateTime.now();
-    return this![key] ?? DateTime.now();
-  }
+  DateTime? getDateTimeOrNull(String key) => this?[key];
 
-  Map<String, Timestamp>? toTimestampMap() {
-    if (this == null) return null;
-    return this!.map((key, value) => MapEntry(key, Timestamp.fromDate(value)));
+  @Deprecated('Use getDateTimeOrNull and choose an explicit fallback.')
+  DateTime getDateTimeOrNowIfNull(String key) {
+    return getDateTimeOrNull(key) ?? DateTime.now();
   }
 }

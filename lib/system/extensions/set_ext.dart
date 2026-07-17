@@ -13,14 +13,12 @@ extension SetExt on Set {
     } else {
       if (value) {
         if (has(flag)) {
-          print('Already has $flag');
           return true;
         }
         add(flag);
         return true;
       } else {
         if (!has(flag)) {
-          print('Already does not have $flag');
           return false;
         }
         remove(flag);

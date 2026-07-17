@@ -22,7 +22,8 @@ class Metric {
     this.interval = 1,
   });
 
-  Metric copyWith({IconData? icon, double? min, double? max, double? interval}) {
+  Metric copyWith(
+      {IconData? icon, double? min, double? max, double? interval}) {
     return Metric(
       abbreviation: abbreviation,
       singular: singular,
@@ -51,6 +52,10 @@ class Metric {
         return Metric.mi;
       case 'inch':
         return Metric.inch;
+      case 'ml':
+        return Metric.ml;
+      case 'oz':
+        return Metric.oz;
       case 'steps':
         return Metric.steps;
       case 'min':
@@ -65,6 +70,8 @@ class Metric {
         return Metric.pts;
       case 'likes':
         return Metric.likes;
+      case 'times':
+        return Metric.times;
       default:
         return Metric.none;
     }
@@ -215,8 +222,14 @@ class Metric {
 }
 
 abstract class MetricConverter {
-  static num kbToLb(num value) => value * 2.20462;
-  static num lbToKb(num value) => value / 2.20462;
+  static num kgToLb(num value) => value * 2.20462;
+  static num lbToKg(num value) => value / 2.20462;
+
+  @Deprecated('Use kgToLb.')
+  static num kbToLb(num value) => kgToLb(value);
+
+  @Deprecated('Use lbToKg.')
+  static num lbToKb(num value) => lbToKg(value);
   static num cmToFt(num value) => value * 0.0328084;
   static num ftToCm(num value) => value / 0.0328084;
   static num kmToMi(num value) => value * 0.621371;
@@ -230,9 +243,9 @@ abstract class MetricConverter {
     }
 
     if (from == Metric.kg && to == Metric.lb) {
-      return MetricConverter.kbToLb(value);
+      return MetricConverter.kgToLb(value);
     } else if (from == Metric.lb && to == Metric.kg) {
-      return MetricConverter.lbToKb(value);
+      return MetricConverter.lbToKg(value);
     } else if (from == Metric.cm && to == Metric.ft) {
       return MetricConverter.cmToFt(value);
     } else if (from == Metric.ft && to == Metric.cm) {
@@ -247,6 +260,9 @@ abstract class MetricConverter {
       return MetricConverter.inchToCm(value);
     }
 
-    return value;
+    throw UnsupportedError(
+      'Conversion from ${from.abbreviation} to ${to.abbreviation} '
+      'is not supported.',
+    );
   }
 }

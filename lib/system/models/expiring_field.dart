@@ -26,7 +26,8 @@ class ExpiringField<T> {
     required this.condition,
   }) : expiresAt = null;
 
-  bool get _isTimeExpired => expiresAt != null && DateTime.now().isAfter(expiresAt!);
+  bool get _isTimeExpired =>
+      expiresAt != null && DateTime.now().isAfter(expiresAt!);
   bool get _isConditionExpired => condition != null && condition!();
 
   // Expiration check

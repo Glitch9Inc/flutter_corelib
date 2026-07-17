@@ -1,7 +1,6 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_corelib/flutter_corelib.dart';
 
 extension StringExt on String {
   get imageIcon32 => Image(
@@ -36,7 +35,10 @@ extension StringExt on String {
   get cyan => '\x1B[36m$this\x1B[0m';
 
   String colorize(Color color) {
-    return '\x1B[38;2;${color.red};${color.green};${color.blue}m$this\x1B[0m';
+    final red = (color.r * 255).round();
+    final green = (color.g * 255).round();
+    final blue = (color.b * 255).round();
+    return '\x1B[38;2;$red;$green;${blue}m$this\x1B[0m';
   }
 
   String insertZwj() {
@@ -94,10 +96,14 @@ extension StringExt on String {
   }
 
   String spacesToLineBreaksCapitalizeFirstLetters() {
-    return split(' ').map((e) => e.capitalizeFirst).join('\n').replaceAll('\n\n', '\n');
+    return split(' ')
+        .map((e) => e.isEmpty ? e : '${e[0].toUpperCase()}${e.substring(1)}')
+        .join('\n')
+        .replaceAll('\n\n', '\n');
   }
 
   String addLineBreaksToEndOfSentences([int lineBreakCount = 2]) {
-    return replaceAllMapped(RegExp(r'(?<=[.?!])\s+(?=[A-Z])'), (m) => '\n' * lineBreakCount);
+    return replaceAllMapped(
+        RegExp(r'(?<=[.?!])\s+(?=[A-Z])'), (m) => '\n' * lineBreakCount);
   }
 }

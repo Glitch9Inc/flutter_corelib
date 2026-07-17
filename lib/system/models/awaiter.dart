@@ -1,42 +1,48 @@
 import 'dart:async';
 
-class Awaiter {
-  static const Duration _interval = Duration(milliseconds: 500);
-  static const Duration _timeOut = Duration(seconds: 30);
-
-  final bool Function() condition;
-  final Completer<void> _completer = Completer<void>();
-
-  Awaiter._({required this.condition}) {
-    // Start checking the condition periodically
-    _checkCondition();
-  }
-
-  static Future<void> waitUntil(bool Function() condition) async {
-    await Awaiter._(condition: condition).waitForCondition();
-  }
-
-  Future<void> waitForCondition() async {
-    if (!condition()) {
-      await Future.any([
-        _completer.future,
-        Future.delayed(_timeOut, () {
-          if (!_completer.isCompleted) {
-            _completer.completeError(TimeoutException('Operation timed out'));
-          }
-        }),
-      ]);
+abstract class Awaiter {
+  static Future<void> waitUntil(
+    bool Function() condition, {
+    Duration interval = const Duration(milliseconds: 500),
+    Duration timeout = const Duration(seconds: 30),
+  }) {
+    if (interval <= Duration.zero) {
+      throw ArgumentError.value(interval, 'interval', 'Must be positive');
     }
-  }
+    if (timeout <= Duration.zero) {
+      throw ArgumentError.value(timeout, 'timeout', 'Must be positive');
+    }
+    if (condition()) return Future<void>.value();
 
-  void _checkCondition() {
-    Timer.periodic(_interval, (timer) {
-      if (condition()) {
-        if (!_completer.isCompleted) {
-          _completer.complete();
-        }
-        timer.cancel(); // Stop checking once condition is met
+    final completer = Completer<void>();
+    Timer? pollTimer;
+    Timer? timeoutTimer;
+
+    void finish([Object? error, StackTrace? stackTrace]) {
+      pollTimer?.cancel();
+      timeoutTimer?.cancel();
+      if (completer.isCompleted) return;
+      if (error == null) {
+        completer.complete();
+      } else {
+        completer.completeError(error, stackTrace);
+      }
+    }
+
+    pollTimer = Timer.periodic(interval, (_) {
+      try {
+        if (condition()) finish();
+      } on Object catch (error, stackTrace) {
+        finish(error, stackTrace);
       }
     });
+    timeoutTimer = Timer(
+      timeout,
+      () => finish(
+        TimeoutException('Condition was not met within $timeout', timeout),
+      ),
+    );
+
+    return completer.future;
   }
 }

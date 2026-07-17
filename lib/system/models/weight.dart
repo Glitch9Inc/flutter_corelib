@@ -10,8 +10,15 @@ class Weight implements Comparable<Weight> {
   /// The total grams of this [Weight] object.
   final double _weight;
 
-  const Weight({double grams = 0, double kilograms = 0, double pounds = 0, double ounces = 0})
-      : this._grams(grams + kilograms * gramsPerKilogram + pounds * gramsPerPound + ounces * gramsPerOunce);
+  const Weight(
+      {double grams = 0,
+      double kilograms = 0,
+      double pounds = 0,
+      double ounces = 0})
+      : this._grams(grams +
+            kilograms * gramsPerKilogram +
+            pounds * gramsPerPound +
+            ounces * gramsPerOunce);
 
   const Weight._grams(double weight) : _weight = weight + 0;
 

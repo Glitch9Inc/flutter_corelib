@@ -1,4 +1,4 @@
-import 'package:flutter_corelib/flutter_corelib.dart';
+import 'package:intl/intl.dart';
 
 enum StringFormat {
   key, // 'sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'
@@ -36,23 +36,24 @@ extension StringFormatExtension on StringFormat {
 
     // 현재 Locale에 따라 기본 요일 이름 가져오기
     final date = DateTime(2023, 1, 1 + adjustedWeekday); // 2023년 1월 1일은 일요일
-    final short = DateFormat.E().format(date); // 예: Sun
+    final abbreviated = DateFormat.E().format(date); // 예: Sun
     final full = DateFormat.EEEE().format(date); // 예: Sunday
 
     // 한자 요일 (일본어 고정)
     const kanji = ['日', '月', '火', '水', '木', '金', '土'];
+    const keys = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
 
     switch (this) {
+      case StringFormat.key:
+        return keys[adjustedWeekday];
       case StringFormat.short:
-        return short; // Locale에 맞는 단축형
+        return abbreviated.isEmpty ? '' : abbreviated.substring(0, 1);
       case StringFormat.abbreviated:
-        return short; // `intl`에서 `abbreviated`는 `short`와 동일
+        return abbreviated;
       case StringFormat.full:
         return full; // Locale에 맞는 전체 이름
       case StringFormat.kanji:
         return kanji[adjustedWeekday]; // 한자는 고정 값 사용
-      default:
-        return short; // 기본적으로 단축형 반환
     }
   }
 }

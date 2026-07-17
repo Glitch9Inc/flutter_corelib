@@ -4,7 +4,8 @@ import 'package:intl/intl.dart';
 extension IntExt on int {
   get secs => Duration(seconds: this);
   get millis => Duration(milliseconds: this);
-  get color => Colors.primaries[(this + 1) % Colors.primaries.length].withAlpha(150);
+  get color =>
+      Colors.primaries[(this + 1) % Colors.primaries.length].withAlpha(150);
   get formattedString {
     final formatter = NumberFormat('#,###');
     return formatter.format(this);

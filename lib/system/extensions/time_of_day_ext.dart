@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_corelib/flutter_corelib.dart';
+import '../diagnostics/debug_log.dart';
 
 extension TimeOfDayExt on TimeOfDay {
   String stringify({bool use24HourFormat = true, bool hidePeriod = false}) {
     if (use24HourFormat) {
       return '${hour.toString().padLeft(2, '0')}:${minute.toString().padLeft(2, '0')}';
     } else {
-      final hourText = hourOfPeriod.toString().padLeft(1, '0');
+      final hourText = (hourOfPeriod == 0 ? 12 : hourOfPeriod).toString();
       final minuteText = minute.toString().padLeft(2, '0');
 
       if (hidePeriod) {
@@ -26,19 +26,24 @@ extension TimeOfDayExt on TimeOfDay {
   }
 
   String toDisplayString({bool includePeriod = true}) {
+    final displayHour = hourOfPeriod == 0 ? 12 : hourOfPeriod;
     if (includePeriod) {
-      return '${hour.toString().padLeft(1, '0')}:${minute.toString().padLeft(2, '0')} ${period == DayPeriod.am ? 'AM' : 'PM'}';
+      return '$displayHour:${minute.toString().padLeft(2, '0')} '
+          '${period == DayPeriod.am ? 'AM' : 'PM'}';
     } else {
-      return '${hour.toString().padLeft(1, '0')}:${minute.toString().padLeft(2, '0')}';
+      return '${hour.toString().padLeft(2, '0')}:'
+          '${minute.toString().padLeft(2, '0')}';
     }
   }
 
   String toSimpleString({bool includePeriod = true}) {
+    final displayHour = hourOfPeriod == 0 ? 12 : hourOfPeriod;
     if (includePeriod) {
       if (minute == 0) {
-        return '${hour.toString().padLeft(1, '0')} ${period == DayPeriod.am ? 'AM' : 'PM'}';
+        return '$displayHour ${period == DayPeriod.am ? 'AM' : 'PM'}';
       } else {
-        return '${hour.toString().padLeft(1, '0')}:${minute.toString().padLeft(2, '0')} ${period == DayPeriod.am ? 'AM' : 'PM'}';
+        return '$displayHour:${minute.toString().padLeft(2, '0')} '
+            '${period == DayPeriod.am ? 'AM' : 'PM'}';
       }
     } else {
       if (minute == 0) {
@@ -51,15 +56,15 @@ extension TimeOfDayExt on TimeOfDay {
 
   TimeOfDay add(Duration duration) {
     final totalMinutes = hour * 60 + minute + duration.inMinutes;
-    final newHour = (totalMinutes ~/ 60) % 24;
-    final newMinute = totalMinutes % 60;
-    return TimeOfDay(hour: newHour, minute: newMinute);
+    final normalized = (totalMinutes % (24 * 60) + (24 * 60)) % (24 * 60);
+    return TimeOfDay(hour: normalized ~/ 60, minute: normalized % 60);
   }
 
   TimeOfDay subtract(Duration duration) {
     final totalMinutes = hour * 60 + minute - duration.inMinutes;
     // totalMinutes가 음수가 될 수 있으니 처리 필요
-    final correctedTotalMinutes = (totalMinutes % (24 * 60) + (24 * 60)) % (24 * 60);
+    final correctedTotalMinutes =
+        (totalMinutes % (24 * 60) + (24 * 60)) % (24 * 60);
     final newHour = correctedTotalMinutes ~/ 60;
     final newMinute = correctedTotalMinutes % 60;
     return TimeOfDay(hour: newHour, minute: newMinute);
@@ -117,15 +122,28 @@ extension TimeOfDayExt on TimeOfDay {
 }
 
 extension TimeOfDayStringExt on String {
+  TimeOfDay? tryToTimeOfDay() {
+    final match = RegExp(r'^([01]?\d|2[0-3]):([0-5]\d)$').firstMatch(trim());
+    if (match == null) return null;
+    return TimeOfDay(
+      hour: int.parse(match.group(1)!),
+      minute: int.parse(match.group(2)!),
+    );
+  }
+
+  TimeOfDay parseTimeOfDay() {
+    final value = tryToTimeOfDay();
+    if (value == null) {
+      throw FormatException('Expected a 24-hour HH:mm value, got "$this".');
+    }
+    return value;
+  }
+
   TimeOfDay toTimeOfDay() {
     try {
-      final parts = split(':');
-      return TimeOfDay(
-        hour: int.parse(parts[0]),
-        minute: int.parse(parts[1]),
-      );
-    } catch (e) {
-      Debug.severe(e);
+      return parseTimeOfDay();
+    } on FormatException catch (error) {
+      Debug.warning(error.message);
       return const TimeOfDay(hour: 0, minute: 0);
     }
   }

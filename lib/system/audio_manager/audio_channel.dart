@@ -1,11 +1,14 @@
 import 'dart:async';
 
-import 'package:flutter_corelib/flutter_corelib.dart';
+import 'package:logging/logging.dart';
+
+import '../../prefs/prefs.dart';
+import '../io/file_path.dart';
 
 mixin AudioChannelPlayer {
-  Future setAsset(String assetPath);
-  Future setUrl(String url);
-  Future setFilePath(String filePath);
+  Future<void> setAsset(String assetPath);
+  Future<void> setUrl(String url);
+  Future<void> setFilePath(String filePath);
   Future<void> setLoop(bool loop);
   Future<void> setVolume(double volume);
   Future<void> play();
@@ -19,223 +22,221 @@ mixin AudioChannelPlayer {
   double get volume;
 }
 
+/// Optional player capability used to release overlap players on completion.
+abstract interface class AudioChannelCompletion {
+  Stream<void> get onCompleted;
+}
+
 class AudioChannel<TAudioPlayer extends AudioChannelPlayer> {
   static const double _defaultVolume = 1;
-  static const int _defaultMinFadeOutDurationInMillis = 2000;
+  static const int _defaultFadeOutDurationInMillis = 2000;
 
-  // Properties
   final String name;
   final bool defaultLoop;
   final bool fadeAudioOnStop;
   final int fadeOutDurationInMillis;
-
-  // Components
-  final Logger _logger;
   final bool allowAudioOverlap;
   final bool ignoreSameAudio;
+  final TAudioPlayer Function() playerBuilder;
+  final Logger _logger;
 
-  // Saved values
   late Prefs<double> _volume;
+  final List<TAudioPlayer> _players = <TAudioPlayer>[];
+  final Map<TAudioPlayer, StreamSubscription<void>> _completionSubscriptions =
+      <TAudioPlayer, StreamSubscription<void>>{};
 
-  // Cache values
   FileSource? _lastFileLocation;
   FileSource? _currentFileSource;
   String? _lastFilePath;
   String? _currentFilePath;
   bool? _lastLoop;
   bool? _currentLoop;
-
-  bool _isFadingOut = false;
-  Timer? _fadeOutTimer;
-
-  final TAudioPlayer Function() playerBuilder;
-  final List<TAudioPlayer> _players = [];
-
-  bool get playing => _players.any((player) => player.playing);
+  int _fadeGeneration = 0;
+  bool _isDisposed = false;
 
   AudioChannel(
     this.name, {
     required this.defaultLoop,
     required this.playerBuilder,
     this.fadeAudioOnStop = false,
-    this.fadeOutDurationInMillis = _defaultMinFadeOutDurationInMillis,
+    this.fadeOutDurationInMillis = _defaultFadeOutDurationInMillis,
     this.allowAudioOverlap = true,
     this.ignoreSameAudio = false,
-  }) : _logger = Logger(name);
+  }) : _logger = Logger(name) {
+    if (fadeOutDurationInMillis < 0) {
+      throw ArgumentError.value(
+        fadeOutDurationInMillis,
+        'fadeOutDurationInMillis',
+        'Must not be negative',
+      );
+    }
+  }
+
+  bool get playing => _players.any((player) => player.playing);
 
   Future<void> init() async {
+    _isDisposed = false;
     _volume = Prefs.create<double>('${name}_volume', _defaultVolume);
     await setVolume(_volume.value);
   }
 
   Future<void> setVolume(double volume) async {
-    _volume.setValue(volume);
-    for (var player in _players) {
-      await player.setVolume(volume);
-    }
+    _ensureActive();
+    final clamped = volume.clamp(0.0, 1.0).toDouble();
+    await _volume.setValue(clamped);
+    await Future.wait(
+      _players.map((player) => player.setVolume(clamped)),
+    );
   }
 
   double getVolume() => _volume.value;
 
   Future<void> playLastAudio() async {
-    if (_lastFileLocation == null || _lastFilePath == null) {
-      _logger.severe('No last audio to play');
-      return;
+    final source = _lastFileLocation;
+    final path = _lastFilePath;
+    if (source == null || path == null) {
+      throw StateError('No last audio to play');
     }
-
-    await play(_lastFileLocation!, _lastFilePath!, loop: _lastLoop);
+    await play(source, path, loop: _lastLoop);
   }
 
-  Future<void> pause() async {
-    for (var player in _players) {
-      await player.pause();
-    }
-  }
+  Future<void> pause() => Future.wait(_players.map((player) => player.pause()));
 
-  Future<void> resume() async {
-    for (var player in _players) {
-      await player.play();
-    }
-  }
+  Future<void> resume() =>
+      Future.wait(_players.map((player) => player.resume()));
 
   Future<void> stop() async {
-    if (fadeAudioOnStop) {
-      for (var player in _players) {
-        await fadeOutAudio(player);
-      }
+    _fadeGeneration++;
+    final players = List<TAudioPlayer>.of(_players);
+    if (fadeAudioOnStop && fadeOutDurationInMillis > 0) {
+      final generation = _fadeGeneration;
+      await Future.wait(
+        players.map((player) => _fadeOut(player, generation)),
+      );
     } else {
-      await _disposePlayers();
+      await Future.wait(players.map(_disposePlayer));
     }
   }
 
-  Future<void> _disposePlayers() async {
-    for (var player in _players) {
-      await player.stop();
-      await player.dispose();
-    }
-    _players.clear();
-  }
-
-  Future<void> toggle() async {
-    if (playing) {
-      await pause();
-    } else {
-      await resume();
-    }
-  }
+  Future<void> toggle() => playing ? pause() : resume();
 
   Future<void> dispose() async {
-    await _disposePlayers();
-    _fadeOutTimer?.cancel();
-    _fadeOutTimer = null;
+    if (_isDisposed) return;
+    _isDisposed = true;
+    _fadeGeneration++;
+    await Future.wait(List<TAudioPlayer>.of(_players).map(_disposePlayer));
   }
 
-  Future<TAudioPlayer> _createPlayer() async {
-    TAudioPlayer player = playerBuilder();
-    _players.add(player);
-    await player.setVolume(getVolume());
-    return player;
-  }
-
-  Future<TAudioPlayer> _fetchPlayer() async {
-    if (playing && !allowAudioOverlap) {
-      if (_isFadingOut) _interruptFadeOut();
-      await _disposePlayers();
-      return await _createPlayer();
+  Future<void> play(
+    FileSource fileSource,
+    String filePath, {
+    bool? loop,
+  }) async {
+    _ensureActive();
+    if (filePath.trim().isEmpty) {
+      throw ArgumentError.value(filePath, 'filePath', 'Must not be empty');
     }
 
-    if (_players.isEmpty) {
-      return await _createPlayer();
-    } else {
-      return _players.first;
-    }
-  }
-
-  Future<void> play(FileSource fileSource, String filePath, {bool? loop}) async {
-    if (filePath.isEmpty) {
-      _logger.severe('Empty file path');
-      return;
-    }
-
-    final splitFilePath = filePath.split('.').first;
-    if (splitFilePath.isEmpty) {
-      _logger.severe('Empty file path');
-      return;
-    }
-
-    final isSameFilePlaying = _currentFileSource == fileSource && _currentFilePath == filePath;
-
-    if (playing && ignoreSameAudio && isSameFilePlaying) {
-      _logger.info('The same audio is already playing: $filePath');
-      return;
-    }
+    final isSameFilePlaying =
+        _currentFileSource == fileSource && _currentFilePath == filePath;
+    if (playing && ignoreSameAudio && isSameFilePlaying) return;
 
     if (!isSameFilePlaying) {
       _lastFileLocation = _currentFileSource;
       _lastFilePath = _currentFilePath;
       _lastLoop = _currentLoop;
-
       _currentFileSource = fileSource;
       _currentFilePath = filePath;
       _currentLoop = loop;
     }
 
-    _logger.info('Playing audio: $filePath');
     final player = await _fetchPlayer();
-
     try {
       switch (fileSource) {
         case FileSource.assetsDir:
           await player.setAsset(filePath);
-          break;
         case FileSource.http:
           await player.setUrl(filePath);
-          break;
-        default:
+        case FileSource.tempDir:
+        case FileSource.appDir:
+        case FileSource.localDrive:
           await player.setFilePath(filePath);
-          break;
       }
-    } catch (e) {
-      _logger.severe('Error setting audio file ($filePath) on player: $e');
-      return;
+      final shouldLoop = loop ?? defaultLoop;
+      await player.setLoop(shouldLoop);
+      await player.play();
+      if (!shouldLoop && !player.playing) {
+        await _disposePlayer(player);
+      }
+    } on Object catch (error, stackTrace) {
+      _logger.severe(
+        'Audio playback failed for "$filePath"',
+        error,
+        stackTrace,
+      );
+      await _disposePlayer(player);
+      rethrow;
     }
-
-    await player.setLoop(loop ?? defaultLoop);
-    await player.play();
   }
 
-  Future<void> fadeOutAudio(TAudioPlayer player) async {
-    if (_fadeOutTimer != null) {
-      _fadeOutTimer!.cancel();
+  Future<TAudioPlayer> _fetchPlayer() async {
+    if (!allowAudioOverlap) {
+      _fadeGeneration++;
+      await Future.wait(List<TAudioPlayer>.of(_players).map(_disposePlayer));
+      return _createPlayer();
     }
 
-    _isFadingOut = true;
-    const step = Duration(milliseconds: 50);
-    final int numberOfSteps = (fadeOutDurationInMillis / step.inMilliseconds).floor();
-    final double volumeDecrease = getVolume() / numberOfSteps;
-
-    _fadeOutTimer = Timer.periodic(step, (timer) {
-      double newVolume = player.volume - volumeDecrease;
-      if (newVolume <= 0) {
-        newVolume = 0;
-        timer.cancel();
-        _fadeOutTimer = null;
-        _isFadingOut = false;
-
-        player.stop().then((_) {
-          player.setVolume(getVolume());
-        }).catchError((e) {
-          _logger.severe('Error stopping audio during fade-out: $e');
-        });
-      }
-
-      player.setVolume(newVolume);
-    });
+    for (final player in _players) {
+      if (!player.playing) return player;
+    }
+    return _createPlayer();
   }
 
-  void _interruptFadeOut() {
-    _fadeOutTimer?.cancel();
-    _fadeOutTimer = null;
-    _isFadingOut = false;
+  Future<TAudioPlayer> _createPlayer() async {
+    final player = playerBuilder();
+    _players.add(player);
+    await player.setVolume(getVolume());
+
+    if (player is AudioChannelCompletion) {
+      final completionPlayer = player as AudioChannelCompletion;
+      _completionSubscriptions[player] =
+          completionPlayer.onCompleted.listen((_) {
+        unawaited(_disposePlayer(player));
+      });
+    }
+    return player;
+  }
+
+  Future<void> _fadeOut(TAudioPlayer player, int generation) async {
+    const stepDuration = Duration(milliseconds: 50);
+    final steps =
+        (fadeOutDurationInMillis / stepDuration.inMilliseconds).ceil().clamp(
+              1,
+              1000000,
+            );
+    final startVolume = player.volume.clamp(0.0, 1.0);
+
+    for (var step = 1; step <= steps; step++) {
+      if (_isDisposed || generation != _fadeGeneration) return;
+      final nextVolume = startVolume * (1 - step / steps);
+      await player.setVolume(nextVolume.clamp(0.0, 1.0));
+      if (step < steps) await Future<void>.delayed(stepDuration);
+    }
+    await _disposePlayer(player);
+  }
+
+  Future<void> _disposePlayer(TAudioPlayer player) async {
+    if (!_players.remove(player)) return;
+    final subscription = _completionSubscriptions.remove(player);
+    await subscription?.cancel();
+    try {
+      await player.stop();
+    } finally {
+      await player.dispose();
+    }
+  }
+
+  void _ensureActive() {
+    if (_isDisposed) throw StateError('AudioChannel "$name" is disposed');
   }
 }

@@ -10,7 +10,8 @@ class PermissionCheckResult<TPermissionModel> {
     return const PermissionCheckResult(true, []);
   }
 
-  factory PermissionCheckResult.denied(List<TPermissionModel> missingPermissions) {
+  factory PermissionCheckResult.denied(
+      List<TPermissionModel> missingPermissions) {
     return PermissionCheckResult(false, missingPermissions);
   }
 }

@@ -1,93 +1,109 @@
 import 'dart:io' as io;
 
-import 'package:dio/dio.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_corelib/flutter_corelib.dart';
-import 'package:flutter_corelib/system/audio_manager/audio_channel.dart';
+import 'package:logging/logging.dart';
+import 'package:path/path.dart' as p;
+import 'package:path_provider/path_provider.dart';
+
+import 'audio_channel.dart';
+import '../../network/dio_ext/dio_util.dart';
+import '../io/file_path.dart';
 
 class AudioFile {
+  static final Logger _logger = Logger('AudioFile');
   static const int fileTooSmallKb = 50;
+
   final FileSource location;
   final String path;
   final String? downloadUrl;
-  final AudioChannel channel;
+  final AudioChannel<dynamic> channel;
+  String? _resolvedLocalPath;
 
-  AudioFile({required this.location, required this.path, required this.channel, this.downloadUrl});
+  AudioFile({
+    required this.location,
+    required this.path,
+    required this.channel,
+    this.downloadUrl,
+  });
 
   Future<void> play() async {
-    if (!await _exists()) throw Exception('File does not exist');
-
-    await channel.play(location, path);
+    if (!await _exists()) throw StateError('Audio file does not exist: $path');
+    await channel.play(location, _resolvedLocalPath ?? path);
   }
 
-  Future<void> stop() async {
-    await channel.stop();
-  }
+  Future<void> stop() => channel.stop();
 
   Future<bool> _exists() async {
-    if (path.isEmpty) throw Exception('Path is empty');
+    if (path.trim().isEmpty) {
+      throw ArgumentError.value(path, 'path', 'Must not be empty');
+    }
     switch (location) {
       case FileSource.assetsDir:
-        return await rootBundle.load(path).then((value) => true).catchError((e) => false);
-
-      case FileSource.http:
-        // TODO: Implement network file check
-        return true;
-
-      default:
-        bool exists = await io.File(path).exists();
-        if (!exists && downloadUrl != null) {
-          exists = await _downloadFile();
+        try {
+          await rootBundle.load(path);
+          return true;
+        } on Object {
+          return false;
         }
-        return exists;
+      case FileSource.http:
+        return true;
+      case FileSource.tempDir:
+      case FileSource.appDir:
+        final resolved = await FilePath(
+          source: location,
+          filePath: path,
+        ).getPath();
+        _resolvedLocalPath = resolved;
+        return io.File(resolved).exists();
+      case FileSource.localDrive:
+        final directFile = io.File(path);
+        if (await directFile.exists()) {
+          _resolvedLocalPath = directFile.path;
+          return true;
+        }
+        return downloadUrl != null && await _downloadFile();
     }
   }
 
   Future<bool> _downloadFile() async {
-    if (downloadUrl.isNullOrEmpty) return false;
+    final url = downloadUrl;
+    if (url == null || url.trim().isEmpty) return false;
 
-    final dio = Dio();
-
-    try {
-      final io.Directory persistentDataPath = await getApplicationDocumentsDirectory();
-      final io.Directory downloadDir = io.Directory('${persistentDataPath.path}/$path');
-      if (!downloadDir.existsSync()) {
-        downloadDir.createSync(recursive: true);
-      }
-
-      final io.File file = io.File('${downloadDir.path}/$path');
-
-      if (file.existsSync()) {
-        final int fileSize = await file.length();
-        if (fileSize < fileTooSmallKb) {
-          file.deleteSync();
-        } else {
-          return true;
-        }
-      }
-
-      final String filePath = '${downloadDir.path}/$path';
-
-      final Response response = await dio.download(
-        downloadUrl!,
-        filePath,
-        onReceiveProgress: (received, total) {
-          if (total != -1) {
-            // Progress update (optional)
-            print('${(received / total * 100).toStringAsFixed(0)}%');
-          }
-        },
-      );
-
-      if (response.statusCode == 200) {
-        return true;
-      } else {
-        return false;
-      }
-    } catch (e) {
-      printError(info: 'Error downloading file: $e');
+    final documents = await getApplicationDocumentsDirectory();
+    final relativePath = p.normalize(path);
+    if (p.isAbsolute(relativePath) || relativePath.startsWith('..')) {
+      throw ArgumentError.value(path, 'path', 'Must be a safe relative path');
     }
 
-    return false;
+    final file = io.File(p.join(documents.path, relativePath));
+    final directory = file.parent;
+    await directory.create(recursive: true);
+    _resolvedLocalPath = file.path;
+
+    if (await file.exists()) {
+      final bytes = await file.length();
+      if (bytes >= fileTooSmallKb * 1024) return true;
+      await file.delete();
+    }
+
+    final temporary = io.File('${file.path}.part');
+    if (await temporary.exists()) await temporary.delete();
+    final dio = DioUtil.createDio();
+    try {
+      final response = await dio.download(url, temporary.path);
+      if (response.statusCode != 200 || !await temporary.exists()) return false;
+      if (await temporary.length() < fileTooSmallKb * 1024) {
+        await temporary.delete();
+        return false;
+      }
+      await temporary.rename(file.path);
+      return true;
+    } on Object catch (error, stackTrace) {
+      _logger.warning('Audio download failed', error, stackTrace);
+      if (await temporary.exists()) await temporary.delete();
+      return false;
+    } finally {
+      dio.close(force: true);
+    }
   }
 }

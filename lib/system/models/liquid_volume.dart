@@ -13,7 +13,14 @@ class LiquidVolume implements Comparable<LiquidVolume> {
   /// The total milliliters of this [LiquidVolume] object.
   final int _liquidVolume;
 
-  const LiquidVolume({int milliliters = 0, int liters = 0, int cups = 0, int pints = 0, int quarts = 0, int gallons = 0, int ounces = 0})
+  const LiquidVolume(
+      {int milliliters = 0,
+      int liters = 0,
+      int cups = 0,
+      int pints = 0,
+      int quarts = 0,
+      int gallons = 0,
+      int ounces = 0})
       : this._milliliters(milliliters +
             liters * millilitersPerLiter +
             cups * millilitersPerCup +
@@ -25,7 +32,8 @@ class LiquidVolume implements Comparable<LiquidVolume> {
   // Fast path internal direct constructor to avoids the optional arguments
   // and [_milliliters] recomputation.
   // The `+ 0` prevents -0.0 on the web, if the incoming liquid volume happens to be -0.0.
-  const LiquidVolume._milliliters(int liquidVolume) : _liquidVolume = liquidVolume + 0;
+  const LiquidVolume._milliliters(int liquidVolume)
+      : _liquidVolume = liquidVolume + 0;
 
   /// Adds this LiquidVolume and [other] and
   /// returns the sum as a new LiquidVolume object.
@@ -60,16 +68,16 @@ class LiquidVolume implements Comparable<LiquidVolume> {
   }
 
   /// Whether this [LiquidVolume] is shorter than [other].
-  bool operator <(LiquidVolume other) => this._liquidVolume < other._liquidVolume;
+  bool operator <(LiquidVolume other) => _liquidVolume < other._liquidVolume;
 
   /// Whether this [LiquidVolume] is longer than [other].
-  bool operator >(LiquidVolume other) => this._liquidVolume > other._liquidVolume;
+  bool operator >(LiquidVolume other) => _liquidVolume > other._liquidVolume;
 
   /// Whether this [LiquidVolume] is shorter than or equal to [other].
-  bool operator <=(LiquidVolume other) => this._liquidVolume <= other._liquidVolume;
+  bool operator <=(LiquidVolume other) => _liquidVolume <= other._liquidVolume;
 
   /// Whether this [LiquidVolume] is longer than or equal to [other].
-  bool operator >=(LiquidVolume other) => this._liquidVolume >= other._liquidVolume;
+  bool operator >=(LiquidVolume other) => _liquidVolume >= other._liquidVolume;
 
   int get inLiters => _liquidVolume ~/ LiquidVolume.millilitersPerLiter;
   int get inMilliliters => _liquidVolume;
@@ -84,7 +92,8 @@ class LiquidVolume implements Comparable<LiquidVolume> {
   /// LiquidVolumes have the same length if they have the same number
   /// of microseconds, as reported by [inMilliliters].
   @override
-  bool operator ==(Object other) => other is LiquidVolume && _liquidVolume == other.inMilliliters;
+  bool operator ==(Object other) =>
+      other is LiquidVolume && _liquidVolume == other.inMilliliters;
 
   @override
   int get hashCode => _liquidVolume.hashCode;
@@ -99,7 +108,8 @@ class LiquidVolume implements Comparable<LiquidVolume> {
   /// It is always the case that `liquidVolume1.compareTo(liquidVolume2) < 0` iff
   /// `(someDate + liquidVolume1).compareTo(someDate + liquidVolume2) < 0`.
   @override
-  int compareTo(LiquidVolume other) => _liquidVolume.compareTo(other._liquidVolume);
+  int compareTo(LiquidVolume other) =>
+      _liquidVolume.compareTo(other._liquidVolume);
 
   @override
   String toString() {

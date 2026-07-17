@@ -20,7 +20,8 @@ abstract class DateTimeBuilder {
 
   static DateTime yesterday() {
     final now = DateTime.now();
-    return DateTime(now.year, now.month, now.day).subtract(const Duration(days: 1));
+    return DateTime(now.year, now.month, now.day)
+        .subtract(const Duration(days: 1));
   }
 
   static DateTime tomorrow() {
@@ -48,6 +49,7 @@ abstract class DateTimeKey {
 
   static DateTime parse(String dateKey) {
     final parts = dateKey.split('-');
-    return DateTime(int.parse(parts[0]), int.parse(parts[1]), int.parse(parts[2]));
+    return DateTime(
+        int.parse(parts[0]), int.parse(parts[1]), int.parse(parts[2]));
   }
 }

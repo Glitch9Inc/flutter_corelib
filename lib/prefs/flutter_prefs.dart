@@ -1,202 +1,272 @@
 import 'dart:convert';
 
-import 'package:flutter_corelib/flutter_corelib.dart';
+import 'package:logging/logging.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
+import '../system/converters/enum_converter.dart';
+
+/// Typed facade for [SharedPreferences].
+///
+/// Call [ensureInitialized] once during application bootstrap. All concurrent
+/// callers share the same initialization future and all writes complete only
+/// after the underlying store reports completion.
 abstract class FlutterPrefs {
   static SharedPreferences? _prefs;
-  static bool _isInit = false;
+  static Future<void>? _initialization;
   static final Logger _logger = Logger('FlutterPrefs');
 
-  static Future<void> ensureInitialized() async {
-    if (_isInit) return;
-    _isInit = true;
-    _prefs ??= await SharedPreferences.getInstance();
+  static bool get isInitialized => _prefs != null;
+
+  static Future<void> ensureInitialized() {
+    if (_prefs != null) return Future<void>.value();
+    return _initialization ??= _initialize();
+  }
+
+  static Future<void> _initialize() async {
+    try {
+      _prefs = await SharedPreferences.getInstance();
+    } catch (_) {
+      _initialization = null;
+      rethrow;
+    }
+  }
+
+  /// Replaces the backing store for an isolated test.
+  static void setPreferencesForTesting(SharedPreferences preferences) {
+    _prefs = preferences;
+    _initialization = Future<void>.value();
+    PrefsCacheRegistry.clear();
+  }
+
+  /// Clears static state between tests.
+  static void resetForTesting() {
+    _prefs = null;
+    _initialization = null;
+    PrefsCacheRegistry.clear();
   }
 
   static SharedPreferences getPrefs() {
-    if (!_isInit || _prefs == null) {
-      _logger.severe('FlutterPrefs is not initialized');
+    final prefs = _prefs;
+    if (prefs == null) {
+      throw StateError(
+        'FlutterPrefs is not initialized. '
+        'Await FlutterPrefs.ensureInitialized() during bootstrap.',
+      );
     }
-
-    return _prefs!;
-  }
-
-  static bool _checkPrefs() {
-    if (_prefs == null) {
-      _logger.severe('FlutterPrefs is not initialized');
-      return false;
-    }
-    return true;
+    return prefs;
   }
 
   static Future<void> setString(String key, String value) async {
-    if (!_checkPrefs()) return;
-    _prefs?.setString(key, value);
+    await _requireWrite(await getPrefs().setString(key, value), key);
   }
 
   static String getString(String key, {String defaultValue = ''}) {
     return getStringOrNull(key) ?? defaultValue;
   }
 
-  static String? getStringOrNull(String key) {
-    if (!_checkPrefs()) return null;
-    return _prefs?.getString(key);
-  }
+  static String? getStringOrNull(String key) => getPrefs().getString(key);
 
   static DateTime? getDateTime(String key, {DateTime? defaultValue}) {
-    if (!_checkPrefs()) return defaultValue;
-    final int? value = _prefs?.getInt(key);
+    final value = getPrefs().getInt(key);
     if (value == null) return defaultValue;
     return DateTime.fromMillisecondsSinceEpoch(value);
   }
 
   static Future<void> setDateTime(String key, DateTime value) async {
-    if (!_checkPrefs()) return;
-    _prefs?.setInt(key, value.millisecondsSinceEpoch);
+    await _requireWrite(
+      await getPrefs().setInt(key, value.millisecondsSinceEpoch),
+      key,
+    );
   }
 
   static Future<void> setInt(String key, int value) async {
-    if (!_checkPrefs()) return;
-    _prefs?.setInt(key, value);
+    await _requireWrite(await getPrefs().setInt(key, value), key);
   }
 
   static int getInt(String key, {int defaultValue = 0}) {
     return getIntOrNull(key) ?? defaultValue;
   }
 
-  static int? getIntOrNull(String key) {
-    if (!_checkPrefs()) return null;
-    return _prefs?.getInt(key);
+  static int? getIntOrNull(String key) => getPrefs().getInt(key);
+
+  static Future<void> setIntList(String key, List<int> value) {
+    return setStringList(
+      key,
+      value.map((item) => item.toString()).toList(growable: false),
+    );
   }
 
-  static Future<void> setIntList(String key, List<int> value) async {
-    if (!_checkPrefs()) return;
-    _prefs?.setStringList(key, value.map((int value) => value.toString()).toList());
-  }
-
-  static List<int> getIntList(String key, {List<int> defaultValue = const []}) {
-    if (!_checkPrefs()) return defaultValue;
-    var stringList = _prefs?.getStringList(key);
-    if (stringList == null) {
-      return defaultValue;
-    }
-    return stringList.map((String value) => int.parse(value)).toList();
+  static List<int> getIntList(
+    String key, {
+    List<int> defaultValue = const <int>[],
+  }) {
+    final values = getPrefs().getStringList(key);
+    if (values == null) return defaultValue;
+    return values.map(int.parse).toList(growable: false);
   }
 
   static Future<void> setDouble(String key, double value) async {
-    if (!_checkPrefs()) return;
-    _prefs?.setDouble(key, value);
+    await _requireWrite(await getPrefs().setDouble(key, value), key);
   }
 
   static double getDouble(String key, {double defaultValue = 0.0}) {
     return getDoubleOrNull(key) ?? defaultValue;
   }
 
-  static double? getDoubleOrNull(String key) {
-    if (!_checkPrefs()) return null;
-    return _prefs?.getDouble(key);
-  }
+  static double? getDoubleOrNull(String key) => getPrefs().getDouble(key);
 
   static Future<void> setBool(String key, bool value) async {
-    if (!_checkPrefs()) return;
-    _prefs?.setBool(key, value);
+    await _requireWrite(await getPrefs().setBool(key, value), key);
   }
 
   static bool getBool(String key, {bool defaultValue = false}) {
     return getBoolOrNull(key) ?? defaultValue;
   }
 
-  static bool? getBoolOrNull(String key) {
-    if (!_checkPrefs()) return null;
-    return _prefs?.getBool(key);
+  static bool? getBoolOrNull(String key) => getPrefs().getBool(key);
+
+  static TEnum getEnum<TEnum extends Enum>(
+    String key,
+    List<TEnum> values, {
+    TEnum? defaultValue,
+  }) {
+    final value = getEnumOrNull(key, values);
+    if (value != null) return value;
+    if (defaultValue != null) return defaultValue;
+    throw StateError('No enum value stored for "$key" and no default given.');
   }
 
-  static TEnum getEnum<TEnum extends Enum>(String key, List<TEnum> values, {TEnum? defaultValue}) {
-    return getEnumOrNull(key, values) ?? defaultValue!;
-  }
-
-  static TEnum? getEnumOrNull<TEnum extends Enum>(String key, List<TEnum> values) {
-    if (!_checkPrefs()) return null;
-    final int? value = _prefs?.getInt(key);
-    if (value == null) {
-      return null;
+  static TEnum? getEnumOrNull<TEnum extends Enum>(
+    String key,
+    List<TEnum> values,
+  ) {
+    final stored = getPrefs().get(key);
+    if (stored == null) return null;
+    if (stored is String) {
+      return EnumConverter.nameToEnum(stored, values);
     }
-    return EnumConverter.indexToEnum(value, values);
+    if (stored is int) {
+      return EnumConverter.indexToEnumOrNull(stored, values);
+    }
+    throw FormatException(
+      'Expected enum name or legacy index for "$key", got ${stored.runtimeType}.',
+    );
   }
 
-  static Future<void> setEnum<TEnum extends Enum>(String key, TEnum value) async {
-    if (!_checkPrefs()) return;
-    _prefs?.setInt(key, EnumConverter.enumToIndex(value));
+  static Future<void> setEnum<TEnum extends Enum>(
+    String key,
+    TEnum value,
+  ) {
+    return setString(key, value.name);
   }
 
-  static List<TEnum> getEnumList<TEnum extends Enum>(String key, List<TEnum> values, {List<TEnum> defaultValue = const []}) {
-    if (!_checkPrefs()) return defaultValue;
-    return EnumConverter.flagToEnumList(_prefs?.getInt(key) ?? 0, values);
+  static List<TEnum> getEnumList<TEnum extends Enum>(
+    String key,
+    List<TEnum> values, {
+    List<TEnum> defaultValue = const <Never>[],
+  }) {
+    final stored = getPrefs().get(key);
+    if (stored == null) return defaultValue;
+    if (stored is List<String>) {
+      return stored
+          .map((name) => EnumConverter.nameToEnumOrNull(name, values))
+          .whereType<TEnum>()
+          .toList(growable: false);
+    }
+    if (stored is int) {
+      return EnumConverter.flagToEnumList(stored, values);
+    }
+    throw FormatException(
+      'Expected enum names or legacy bit flag for "$key", '
+      'got ${stored.runtimeType}.',
+    );
   }
 
-  static Future<void> setEnumList<TEnum extends Enum>(String key, List<TEnum> value) async {
-    if (!_checkPrefs()) return;
-    _prefs?.setInt(key, EnumConverter.enumListToFlag(value));
+  static Future<void> setEnumList<TEnum extends Enum>(
+    String key,
+    List<TEnum> value,
+  ) {
+    return setStringList(
+      key,
+      value.map((item) => item.name).toList(growable: false),
+    );
   }
 
   static Future<void> setStringList(String key, List<String> value) async {
-    if (!_checkPrefs()) return;
-    _prefs?.setStringList(key, value);
+    await _requireWrite(await getPrefs().setStringList(key, value), key);
   }
 
-  static List<String> getStringList(String key, {List<String> defaultValue = const []}) {
-    if (!_checkPrefs()) return defaultValue;
-    return _prefs?.getStringList(key) ?? defaultValue;
+  static List<String> getStringList(
+    String key, {
+    List<String> defaultValue = const <String>[],
+  }) {
+    return getPrefs().getStringList(key) ?? defaultValue;
   }
 
   static Future<void> remove(String key) async {
-    if (!_checkPrefs()) return;
-    await _prefs?.remove(key);
+    await _requireWrite(await getPrefs().remove(key), key);
   }
 
   static void debugLogAllKeys() {
-    if (!_checkPrefs()) return;
-    for (String key in _prefs!.getKeys()) {
-      _logger.info('key: $key, value: ${_prefs!.get(key)}');
+    for (final key in getPrefs().getKeys()) {
+      _logger.info('SharedPreferences key: $key');
     }
   }
 
-  static T? get<T>(String key, {T? defaultValue, T Function(Map<String, dynamic>)? factory}) {
-    _checkPrefs();
-    T? value;
+  static T? get<T>(
+    String key, {
+    T? defaultValue,
+    T Function(Map<String, dynamic>)? factory,
+  }) {
+    final prefs = getPrefs();
+    Object? value;
 
-    if (T is String) {
-      value = getString(key) as T?;
-    } else if (T is int) {
-      value = getInt(key) as T?;
-    } else if (T is double) {
-      value = getDouble(key) as T?;
-    } else if (T is bool) {
-      value = getBool(key) as T?;
-    } else if (T is DateTime) {
-      value = getDateTime(key) as T?;
-    } else if (T is List<String>) {
-      value = getStringList(key) as T?;
-    } else if (T is List<int>) {
-      value = getIntList(key) as T?;
-    } else if (T is List<double>) {
-      value = getStringList(key).map((String value) => double.parse(value)).toList() as T?;
-    } else if (T is List<bool>) {
-      value = getStringList(key).map((String value) => value == 'true').toList() as T?;
-    } else if (factory != null) {
-      final jsonString = _prefs?.getString(key);
+    if (T == String) {
+      value = prefs.getString(key);
+    } else if (T == int) {
+      value = prefs.getInt(key);
+    } else if (T == double) {
+      value = prefs.getDouble(key);
+    } else if (T == bool) {
+      value = prefs.getBool(key);
+    } else if (T == DateTime) {
+      value = getDateTime(key);
+    } else if (T == List<String>) {
+      value = prefs.getStringList(key);
+    } else if (T == List<int>) {
+      value = prefs.getStringList(key)?.map(int.parse).toList(growable: false);
+    } else if (T == List<double>) {
+      value =
+          prefs.getStringList(key)?.map(double.parse).toList(growable: false);
+    } else if (T == List<bool>) {
+      value = prefs.getStringList(key)?.map(_parseBool).toList(growable: false);
+    } else {
+      final jsonString = prefs.getString(key);
       if (jsonString != null) {
-        value = json.decode(jsonString);
-        return factory(value as Map<String, dynamic>);
+        final decoded = jsonDecode(jsonString);
+        if (factory != null) {
+          if (decoded is! Map<String, dynamic>) {
+            throw FormatException(
+              'Expected a JSON object for "$key", got ${decoded.runtimeType}.',
+            );
+          }
+          value = factory(decoded);
+        } else {
+          value = decoded;
+        }
       }
     }
 
-    return value ?? defaultValue;
+    if (value == null) return defaultValue;
+    if (value is! T) {
+      throw FormatException(
+        'Stored value for "$key" is ${value.runtimeType}, expected $T.',
+      );
+    }
+    return value as T;
   }
 
   static Future<void> set<T>(String key, T value) async {
-    _checkPrefs();
-
     if (T == String) {
       await setString(key, value as String);
     } else if (T == int) {
@@ -212,16 +282,52 @@ abstract class FlutterPrefs {
     } else if (T == List<int>) {
       await setIntList(key, value as List<int>);
     } else if (T == List<double>) {
-      await setStringList(key, (value as List<double>).map((double value) => value.toString()).toList());
+      await setStringList(
+        key,
+        (value as List<double>)
+            .map((item) => item.toString())
+            .toList(growable: false),
+      );
     } else if (T == List<bool>) {
-      await setStringList(key, (value as List<bool>).map((bool value) => value.toString()).toList());
+      await setStringList(
+        key,
+        (value as List<bool>)
+            .map((item) => item.toString())
+            .toList(growable: false),
+      );
     } else {
-      await setString(key, json.encode(value));
+      await setString(key, jsonEncode(value));
     }
   }
 
-  static bool hasKey(String key) {
-    _checkPrefs();
-    return _prefs!.containsKey(key);
+  static bool hasKey(String key) => getPrefs().containsKey(key);
+
+  static Future<void> _requireWrite(bool succeeded, String key) async {
+    if (!succeeded) {
+      throw StateError('SharedPreferences rejected write for "$key".');
+    }
   }
+
+  static bool _parseBool(String value) {
+    if (value == 'true') return true;
+    if (value == 'false') return false;
+    throw FormatException('Expected "true" or "false", got "$value".');
+  }
+}
+
+/// Shared cache registry used to reject duplicate keys with different types.
+abstract class PrefsCacheRegistry {
+  static final Map<String, Type> _types = <String, Type>{};
+
+  static void register<T>(String key) {
+    final existing = _types[key];
+    if (existing != null && existing != T) {
+      throw StateError(
+        'Preference key "$key" is already registered as $existing, not $T.',
+      );
+    }
+    _types[key] = T;
+  }
+
+  static void clear() => _types.clear();
 }

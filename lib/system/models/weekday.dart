@@ -1,4 +1,3 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_corelib/system/models/string_format.dart';
 
 abstract class Weekday {
@@ -13,14 +12,25 @@ abstract class Weekday {
   static const List<int> weekdays = [1, 2, 3, 4, 5];
   static const List<int> weekends = [6, 7];
 
-  static const _keys = {sunday: 'sun', monday: 'mon', tuesday: 'tue', wednesday: 'wed', thursday: 'thu', friday: 'fri', saturday: 'sat'};
-  static int parse(String weekday) => _keys.entries.firstWhere((element) => element.value == weekday).key;
-  static String format(int weekday, [StringFormat format = StringFormat.key]) => format.formatWeekday(weekday);
+  static const _keys = {
+    sunday: 'sun',
+    monday: 'mon',
+    tuesday: 'tue',
+    wednesday: 'wed',
+    thursday: 'thu',
+    friday: 'fri',
+    saturday: 'sat'
+  };
+  static int parse(String weekday) =>
+      _keys.entries.firstWhere((element) => element.value == weekday).key;
+  static String format(int weekday, [StringFormat format = StringFormat.key]) =>
+      format.formatWeekday(weekday);
 
-  static String formatList(List<int> weekdays, [StringFormat format = StringFormat.short]) {
-    if (const ListEquality().equals(weekdays, everyday)) return 'Everyday';
-    if (const ListEquality().equals(weekdays, Weekday.weekdays)) return 'Weekdays';
-    if (const ListEquality().equals(weekdays, weekends)) return 'Weekends';
+  static String formatList(List<int> weekdays,
+      [StringFormat format = StringFormat.short]) {
+    if (_listEquals(weekdays, everyday)) return 'Everyday';
+    if (_listEquals(weekdays, Weekday.weekdays)) return 'Weekdays';
+    if (_listEquals(weekdays, weekends)) return 'Weekends';
     return [
       if (weekdays.contains(7)) format.formatWeekday(Weekday.sunday),
       if (weekdays.contains(1)) format.formatWeekday(Weekday.monday),
@@ -30,5 +40,13 @@ abstract class Weekday {
       if (weekdays.contains(5)) format.formatWeekday(Weekday.friday),
       if (weekdays.contains(6)) format.formatWeekday(Weekday.saturday),
     ].join(', ');
+  }
+
+  static bool _listEquals(List<int> first, List<int> second) {
+    if (first.length != second.length) return false;
+    for (var index = 0; index < first.length; index++) {
+      if (first[index] != second[index]) return false;
+    }
+    return true;
   }
 }

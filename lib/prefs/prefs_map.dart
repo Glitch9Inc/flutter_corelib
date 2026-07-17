@@ -1,76 +1,86 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:logging/logging.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+
+import 'flutter_prefs.dart';
 
 class PrefsMap<TKey, TValue> {
-  static final Map<String, PrefsMap> _cache = {};
+  static final Map<String, PrefsMap<dynamic, dynamic>> _cache =
+      <String, PrefsMap<dynamic, dynamic>>{};
+
   final String _prefsKey;
   final Logger _logger = Logger('PrefsMap<$TKey, $TValue>');
-  late Map<TKey, TValue> _value;
-  SharedPreferences? _prefs;
+  Map<TKey, TValue> _value = <TKey, TValue>{};
 
   PrefsMap._(this._prefsKey);
 
   static Future<PrefsMap<TKey, TValue>> create<TKey, TValue>(String key) async {
-    if (!_cache.containsKey(key)) {
-      var prefs = PrefsMap<TKey, TValue>._(key);
-      await prefs._init();
-      _cache[key] = prefs;
+    if (TKey != String) {
+      throw UnsupportedError(
+        'PrefsMap JSON keys must be String; requested $TKey.',
+      );
     }
-    return _cache[key] as PrefsMap<TKey, TValue>;
+    PrefsCacheRegistry.register<PrefsMap<TKey, TValue>>(key);
+    final cached = _cache[key];
+    if (cached != null) return cached as PrefsMap<TKey, TValue>;
+
+    final prefs = PrefsMap<TKey, TValue>._(key).._load();
+    _cache[key] = prefs;
+    return prefs;
   }
 
-  Future<void> _init() async {
-    _prefs = await SharedPreferences.getInstance();
-    _load();
-  }
+  static void clearCache() => _cache.clear();
 
-  Map<TKey, TValue> get value {
-    return _value;
-  }
+  Map<TKey, TValue> get value => Map<TKey, TValue>.unmodifiable(_value);
 
   set value(Map<TKey, TValue> newValue) {
-    _value = newValue;
-    _save();
+    unawaited(setValue(newValue));
   }
 
-  void _load() {
-    if (_prefs == null) return;
-
-    var jsonString = _prefs!.getString(_prefsKey);
-    if (jsonString != null) {
-      try {
-        var decoded = jsonDecode(jsonString) as Map<String, dynamic>;
-        _value = decoded.map((key, value) => MapEntry(key as TKey, value as TValue));
-      } catch (e) {
-        _logger.severe('Error decoding JSON: $e');
-      }
-    } else {
-      _value = {};
-    }
+  Future<void> setValue(Map<TKey, TValue> newValue) async {
+    _value = Map<TKey, TValue>.of(newValue);
+    await _save();
   }
 
-  void _save() {
-    if (_prefs == null) return;
-
-    var jsonString = jsonEncode(_value);
-    _prefs!.setString(_prefsKey, jsonString);
-  }
-
-  void put(TKey key, TValue value) {
+  Future<void> put(TKey key, TValue value) async {
     _value[key] = value;
-    _save();
+    await _save();
   }
 
-  void remove(TKey key) {
+  Future<void> remove(TKey key) async {
     _value.remove(key);
-    _save();
+    await _save();
   }
 
   Future<void> clear() async {
-    if (_prefs == null) return;
-    await _prefs!.remove(_prefsKey);
-    _value = {};
+    await FlutterPrefs.remove(_prefsKey);
+    _value = <TKey, TValue>{};
+  }
+
+  void _load() {
+    final jsonString = FlutterPrefs.getStringOrNull(_prefsKey);
+    if (jsonString == null) return;
+
+    try {
+      final decoded = jsonDecode(jsonString);
+      if (decoded is! Map<String, dynamic>) {
+        throw const FormatException('Expected a JSON object.');
+      }
+      _value = decoded.map<TKey, TValue>(
+        (key, value) => MapEntry(key as TKey, value as TValue),
+      );
+    } on Object catch (error, stackTrace) {
+      _logger.warning(
+        'Failed to decode preference "$_prefsKey".',
+        error,
+        stackTrace,
+      );
+      _value = <TKey, TValue>{};
+    }
+  }
+
+  Future<void> _save() {
+    return FlutterPrefs.setString(_prefsKey, jsonEncode(_value));
   }
 }

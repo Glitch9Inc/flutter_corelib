@@ -1,6 +1,11 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_corelib/flutter_corelib.dart';
+import 'package:logging/logging.dart';
+
+import '../models/time_of_day_range.dart';
+import '../models/time_range.dart';
+import '../models/weekday.dart';
+import 'string_ext.dart';
+import 'time_of_day_ext.dart';
 
 extension MapExt on Map<String, dynamic> {
   static final Logger _logger = Logger('MapExt');
@@ -10,7 +15,6 @@ extension MapExt on Map<String, dynamic> {
     if (value is String) {
       if (value.isEmpty) return true;
       if (value.toLowerCase() == 'null') return true;
-      if (value.startsWith('*')) return true; // 데이터가 없지만 설명을 위해 간혹 셀안에 *과 텍스트를 넣는 경우가 있음
     }
     if (value is Iterable) {
       if (value.isEmpty) return true; // 빈 List 또는 Set 체크
@@ -88,7 +92,9 @@ extension MapExt on Map<String, dynamic> {
 
     if (_isNullOrEmpty(value)) return null;
     if (value is bool) return value;
-    if (value is String) return value.toLowerCase().trim() == 'true' || value == '1';
+    if (value is String) {
+      return value.toLowerCase().trim() == 'true' || value == '1';
+    }
     if (value is int) return value == 1;
 
     return null;
@@ -142,10 +148,12 @@ extension MapExt on Map<String, dynamic> {
       }
     } catch (e) {
       _logger.severe('Error in getList: $e');
-      _logger.severe('getList type: $T, received value type: ${value.runtimeType}');
+      _logger.severe(
+          'getList type: $T, received value type: ${value.runtimeType}');
     }
 
-    _logger.shout("Key: $key does not contain a valid list. Returning default value.");
+    _logger.shout(
+        "Key: $key does not contain a valid list. Returning default value.");
     return null;
   }
 
@@ -229,7 +237,9 @@ extension MapExt on Map<String, dynamic> {
         final processedKey = keyMapper?.call(rawKey) ?? rawKey as TKey;
 
         // 값 처리
-        final processedValue = valueMapper?.call(rawValue) ?? factory?.call(rawValue as Map<String, dynamic>) ?? rawValue as TValue;
+        final processedValue = valueMapper?.call(rawValue) ??
+            factory?.call(rawValue as Map<String, dynamic>) ??
+            rawValue as TValue;
 
         return MapEntry(processedKey, processedValue);
       });
@@ -239,7 +249,8 @@ extension MapExt on Map<String, dynamic> {
     return defaultValue ?? {};
   }
 
-  Map<String, dynamic> getJson(String key, {Map<String, dynamic>? defaultValue}) {
+  Map<String, dynamic> getJson(String key,
+      {Map<String, dynamic>? defaultValue}) {
     return getJsonOrNull(key) ?? defaultValue ?? {};
   }
 
@@ -261,10 +272,13 @@ extension MapExt on Map<String, dynamic> {
     return defaultValue ?? {};
   }
 
-  Map<String, String> getStringMap(String key, {Map<String, String>? defaultValue}) {
+  Map<String, String> getStringMap(String key,
+      {Map<String, String>? defaultValue}) {
     try {
       var map = this[key] as Map<String, dynamic>?;
-      return map?.map((key, value) => MapEntry(key, value as String)) ?? defaultValue ?? {};
+      return map?.map((key, value) => MapEntry(key, value as String)) ??
+          defaultValue ??
+          {};
     } catch (e) {
       _logger.severe('Error in getStringMap: $e');
       return defaultValue ?? {};
@@ -274,26 +288,29 @@ extension MapExt on Map<String, dynamic> {
   Map<String, bool> getBoolMap(String key, {Map<String, bool>? defaultValue}) {
     try {
       var map = this[key] as Map<String, dynamic>?;
-      return map?.map((key, value) => MapEntry(key, value as bool)) ?? defaultValue ?? {};
+      return map?.map((key, value) => MapEntry(key, value as bool)) ??
+          defaultValue ??
+          {};
     } catch (e) {
       _logger.severe('Error in getBoolMap: $e');
       return defaultValue ?? {};
     }
   }
 
-  Map<String, DateTime> getDateTimeMap(String key, {Map<String, DateTime>? defaultValue}) {
-    try {
-      final value = this[key];
+  Map<String, DateTime> getDateTimeMap(String key,
+      {Map<String, DateTime>? defaultValue}) {
+    final value = this[key];
+    if (_isNullOrEmpty(value)) return defaultValue ?? {};
+    if (value is! Map) return defaultValue ?? {};
 
-      if (_isNullOrEmpty(value)) return defaultValue ?? {};
-      if (value is Map<String, DateTime>) return value;
-      if (value is Map<String, Timestamp>) return value.map((key, value) => MapEntry(key, convertToDateTime(value, DateTime.now())));
-
-      return defaultValue ?? {};
-    } catch (e) {
-      _logger.severe('Error in getDateTimeMap: $e');
-      return defaultValue ?? {};
+    final result = <String, DateTime>{};
+    for (final entry in value.entries) {
+      final converted = convertToDateTimeOrNull(entry.value);
+      if (converted != null) {
+        result[entry.key.toString()] = converted;
+      }
     }
+    return result;
   }
 
   T getEnum<T extends Enum>(String key, List<T> values, {T? defaultValue}) {
@@ -307,17 +324,23 @@ extension MapExt on Map<String, dynamic> {
 
     if (value is T) return value;
 
-    switch (value.runtimeType) {
-      case String:
-        return values.firstWhereOrNull((element) => _parseEnumName(element.toString()) == _parseEnumName(value.toString()));
-      case int:
-        return values.firstWhereOrNull((element) => element.index == value);
+    if (value is String) {
+      for (final element in values) {
+        if (_parseEnumName(element.toString()) == _parseEnumName(value)) {
+          return element;
+        }
+      }
+    } else if (value is int) {
+      for (final element in values) {
+        if (element.index == value) return element;
+      }
     }
 
     return null;
   }
 
-  List<T> getEnumList<T extends Enum>(String key, List<T> values, {List<T>? defaultValue}) {
+  List<T> getEnumList<T extends Enum>(String key, List<T> values,
+      {List<T>? defaultValue}) {
     final value = this[key];
     defaultValue ??= [];
 
@@ -328,7 +351,10 @@ extension MapExt on Map<String, dynamic> {
       if (value.isEmpty) return defaultValue;
       if (value.toLowerCase() == 'all') return values;
       return value.split(',').map((e) {
-        return values.firstWhere((element) => _parseEnumName(element.toString()) == _parseEnumName(e.toString()), orElse: () {
+        return values.firstWhere(
+            (element) =>
+                _parseEnumName(element.toString()) ==
+                _parseEnumName(e.toString()), orElse: () {
           _logger.warning('Enum not found with name: $e');
           return values.first;
         });
@@ -338,14 +364,19 @@ extension MapExt on Map<String, dynamic> {
     if (value is List<String>) {
       return value
           .where((e) => e.isNotEmpty) // Skip empty strings
-          .map((e) => values.firstWhere((element) => _parseEnumName(element.toString()).toLowerCase() == _parseEnumName(e.toString()).toLowerCase()))
+          .map((e) => values.firstWhere((element) =>
+              _parseEnumName(element.toString()).toLowerCase() ==
+              _parseEnumName(e.toString()).toLowerCase()))
           .toList();
     }
 
     if (value is List<dynamic>) {
       return value
-          .where((e) => e == null || (e is String && e.isNotEmpty)) // Skip empty strings
-          .map((e) => values.firstWhere((element) => _parseEnumName(element.toString()).toLowerCase() == _parseEnumName(e.toString()).toLowerCase()))
+          .whereType<String>()
+          .where((item) => item.isNotEmpty)
+          .map((item) => values.firstWhere((element) =>
+              _parseEnumName(element.toString()).toLowerCase() ==
+              _parseEnumName(item).toLowerCase()))
           .toList();
     }
 
@@ -357,9 +388,9 @@ extension MapExt on Map<String, dynamic> {
   }
 
   TimeOfDay? getTimeOfDayOrNull(String key) {
-    String? stringValue = this[key] as String?;
-    if (stringValue == null) return null;
-    return stringValue.toTimeOfDay();
+    final value = this[key];
+    if (value is! String) return null;
+    return value.tryToTimeOfDay();
   }
 
   DateTime getDateTime(String key, {DateTime? defaultValue}) {
@@ -371,32 +402,20 @@ extension MapExt on Map<String, dynamic> {
 
     if (_isNullOrEmpty(value)) return null;
     if (value is DateTime) return value;
-    if (value is Timestamp) return (this[key] as Timestamp).toDate();
     if (value is String) return DateTime.tryParse(this[key] as String);
     if (value is int) return DateTime.fromMillisecondsSinceEpoch(value);
-
-    return null;
+    return convertToDateTimeOrNull(value);
   }
 
   T? getObject<T>(String key, T Function(Object) mapper, {T? defaultValue}) {
     final value = this[key];
     if (_isNullOrEmpty(value)) return defaultValue;
-    return mapper(value) ?? defaultValue;
-  }
-
-  Timestamp getTimestamp(String key, {Timestamp? defaultValue}) {
-    return getTimestampOrNull(key) ?? defaultValue ?? Timestamp.now();
-  }
-
-  Timestamp? getTimestampOrNull(String key) {
-    final value = this[key];
-    if (_isNullOrEmpty(value)) return null;
-    if (value is Timestamp) return value;
-    return null;
+    return mapper(value);
   }
 
   // Utility functions
-  String _parseEnumName(String enumAsString) => enumAsString.split('.').last.toLowerCase();
+  String _parseEnumName(String enumAsString) =>
+      enumAsString.split('.').last.toLowerCase();
 
   /// Get a [Duration] value from the map.
   /// If the value is an integer, it is treated as minutes.
@@ -448,22 +467,35 @@ extension MapExt on Map<String, dynamic> {
   }
 
   DateTime convertToDateTime(dynamic value, DateTime defaultValue) {
+    return convertToDateTimeOrNull(value) ?? defaultValue;
+  }
+
+  DateTime? convertToDateTimeOrNull(Object? value) {
     if (value is DateTime) return value;
-    if (value is Timestamp) return value.toDate();
-    if (value is String) return DateTime.tryParse(value) ?? DateTime.now();
+    if (value is String) return DateTime.tryParse(value);
     if (value is int) return DateTime.fromMillisecondsSinceEpoch(value);
+    try {
+      final converted = (value as dynamic).toDate();
+      if (converted is DateTime) return converted;
+    } on Object {
+      // Unsupported adapter value.
+    }
     _logger.warning('Failed to convert value to DateTime: $value');
-    return defaultValue;
+    return null;
   }
 
   // Map<int /* weekday */, TimeOfDay>
 
-  Map<int, TimeOfDay> getTimeOfDayMap(String key, {Map<int, TimeOfDay>? defaultValue}) {
+  Map<int, TimeOfDay> getTimeOfDayMap(String key,
+      {Map<int, TimeOfDay>? defaultValue}) {
     final value = this[key];
     if (_isNullOrEmpty(value)) return defaultValue ?? {};
 
     if (value is Map<int, TimeOfDay>) return value;
-    if (value is Map<String, String>) return value.map((key, value) => MapEntry(Weekday.parse(key), value.toTimeOfDay()));
+    if (value is Map<String, String>) {
+      return value.map(
+          (key, value) => MapEntry(Weekday.parse(key), value.toTimeOfDay()));
+    }
 
     return defaultValue ?? {};
   }

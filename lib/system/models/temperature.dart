@@ -18,7 +18,8 @@ class Temperature implements Comparable<Temperature> {
 
   /// Factory constructor for temperature in Fahrenheit.
   factory Temperature.fahrenheit(double fahrenheit) {
-    return Temperature.celsius((fahrenheit - fahrenheitOffset) / fahrenheitMultiplier);
+    return Temperature.celsius(
+        (fahrenheit - fahrenheitOffset) / fahrenheitMultiplier);
   }
 
   /// Gets the temperature in Celsius.
@@ -58,7 +59,8 @@ class Temperature implements Comparable<Temperature> {
   bool operator >=(Temperature other) => _celsius >= other._celsius;
 
   @override
-  bool operator ==(Object other) => other is Temperature && _celsius == other._celsius;
+  bool operator ==(Object other) =>
+      other is Temperature && _celsius == other._celsius;
 
   @override
   int get hashCode => _celsius.hashCode;
