@@ -1,7 +1,5 @@
 import 'dart:async';
 
-import 'package:dart_corelib/models/result.dart';
-import 'package:flutter_corelib/network/services/api_data_service.dart';
 import 'package:flutter_corelib/prefs/flutter_prefs.dart';
 import 'package:flutter_corelib/prefs/prefs.dart';
 import 'package:flutter_corelib/system/audio_manager/audio_channel.dart';
@@ -62,29 +60,6 @@ void main() {
     await channel.stop();
     expect(players.every((player) => player.disposed), isTrue);
   });
-
-  test('API service retains typed failures and emits deleted id', () async {
-    final service = _FakeService();
-    final deletedId = expectLater(service.onDeletedId, emits('item-1'));
-
-    final missing = await service.retrieveResult('missing');
-    expect(missing.isFailure, isTrue);
-    expect(
-      (missing.error as APIDataException).kind,
-      APIDataFailureKind.notFound,
-    );
-
-    final created = await service.retrieveOrCreate('missing');
-    expect(created, 'missing');
-
-    expect(await service.delete('item-1'), isTrue);
-    await deletedId;
-    await service.dispose();
-
-    final afterDispose = await service.listResult(1);
-    expect(afterDispose.isFailure, isTrue);
-    expect(afterDispose.error, isA<StateError>());
-  });
 }
 
 class _FakePlayer with AudioChannelPlayer {
@@ -130,34 +105,4 @@ class _FakePlayer with AudioChannelPlayer {
 
   @override
   Future<void> stop() async => _playing = false;
-}
-
-class _FakeService extends APIDataService<String> {
-  @override
-  Future<Result<String>> createInternal({String? id}) async {
-    return Result<String>.success(data: id ?? 'created');
-  }
-
-  @override
-  Future<Result<void>> deleteInternal(String id) async {
-    return Result<void>.success();
-  }
-
-  @override
-  Future<Result<List<String>>> listInternal(int count) async {
-    return Result<List<String>>.success(data: <String>['value']);
-  }
-
-  @override
-  Future<Result<String>> retrieveInternal(String id) async {
-    if (id == 'missing') {
-      return Result<String>.error(
-        const APIDataException(
-          APIDataFailureKind.notFound,
-          'not found',
-        ),
-      );
-    }
-    return Result<String>.success(data: id);
-  }
 }

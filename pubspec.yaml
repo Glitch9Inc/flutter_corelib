@@ -1,6 +1,6 @@
 name: flutter_corelib
 description: "A comprehensive library for Flutter applications, providing utilities for management, local database, network operations, audio, localization, UI, and more."
-version: 0.3.0
+version: 0.4.0
 homepage: https://github.com/Glitch9Inc/flutter_corelib
 repository: https://github.com/Glitch9Inc/flutter_corelib
 issue_tracker: https://github.com/Glitch9Inc/flutter_corelib/issues
@@ -23,8 +23,6 @@ dependencies:
   path: ^1.9.0 # Pinned by Flutter 3.27 flutter_test
   path_provider: ^2.1.5 # File management
   # url_launcher: ^6.2.6
-  dio: ^5.10.0
-
   # local database
   shared_preferences: ^2.5.3
 

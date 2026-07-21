@@ -1,7 +1,7 @@
 import 'dart:math';
 
+import 'package:dart_corelib/time/unix_time.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_corelib/network/models/unix_time.dart';
 import 'package:flutter_corelib/system/converters/enum_converter.dart';
 import 'package:flutter_corelib/system/extensions/date_time_ext.dart';
 import 'package:flutter_corelib/system/extensions/time_of_day_ext.dart';

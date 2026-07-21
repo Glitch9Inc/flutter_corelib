@@ -1,3 +1,13 @@
+## 0.4.0
+
+- Move shared Dio configuration to the sibling `dart_dio` package and remove
+  the Dio dependency from this package.
+- Move authentication session metadata under the storage entrypoint.
+- Remove password and token compatibility fields from `AuthInfo`.
+- Replace the built-in audio HTTP client with an injected downloader boundary.
+- Keep only the vendor-neutral `ErrorReporter` contract in diagnostics.
+- Remove unused network CRUD, JSON, timer, HTTP method, and WebSocket helpers.
+
 ## 0.3.0
 
 - Split additional pure Dart utilities into `dart_corelib` with compatibility

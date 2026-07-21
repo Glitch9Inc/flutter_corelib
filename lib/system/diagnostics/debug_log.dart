@@ -5,7 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:logging/logging.dart';
 
-import '../utils/discord.dart';
+import 'error_reporter.dart';
 
 enum LogLevel {
   minimal,
@@ -52,13 +52,13 @@ abstract class Debug {
 
   static void severe(
     Object message, {
-    bool sendToDiscord = false,
+    bool reportExternally = false,
     Object? error,
     StackTrace? stackTrace,
   }) {
     logger.severe(message.toString(), error, stackTrace);
     final reporter = errorReporter;
-    if (sendToDiscord && reporter != null) {
+    if (reportExternally && reporter != null) {
       unawaited(
         reporter
             .report(

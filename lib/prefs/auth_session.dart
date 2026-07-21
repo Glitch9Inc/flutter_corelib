@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import '../../prefs/flutter_prefs.dart';
+import 'flutter_prefs.dart';
 
 enum AuthType {
   none,
@@ -14,45 +14,26 @@ abstract class AuthConfig {
   static const kPrefsKeyEmail = 'auth_email';
   static const kPrefsKeyAuthType = 'auth_auth_type';
 
-  // Retained only to remove data written by versions before 0.3.0.
   static const _legacyPasswordKey = 'auth_password';
   static const _legacyTokenKey = 'auth_token';
 }
 
-/// Immutable, side-effect-free public authentication profile.
-///
-/// `password` and `token` remain as deprecated compatibility fields. They are
-/// never persisted by this package. Applications that need credentials must
-/// keep them in a platform secure-storage implementation.
+/// Immutable authentication profile containing no secrets.
 class AuthInfo {
   final AuthType type;
   final String name;
   final String email;
 
-  final String _password;
-  final String _token;
-
-  @Deprecated('Credentials must be held by a secure CredentialStore.')
-  String get password => _password;
-
-  @Deprecated('Credentials must be held by a secure CredentialStore.')
-  String get token => _token;
-
   const AuthInfo({
     required this.type,
     required this.name,
     required this.email,
-    String password = '',
-    String token = '',
-  })  : _password = password,
-        _token = token;
+  });
 
   static Future<void> saveToPrefs({
     required AuthType type,
     required String name,
     required String email,
-    String? password,
-    String? token,
   }) {
     return const AuthSessionRepository().save(
       AuthInfo(type: type, name: name, email: email),
@@ -65,7 +46,7 @@ class AuthInfo {
       const AuthSessionRepository().clear();
 }
 
-/// Persists only non-secret session metadata.
+/// Persists only non-secret authentication session metadata.
 class AuthSessionRepository {
   const AuthSessionRepository();
 

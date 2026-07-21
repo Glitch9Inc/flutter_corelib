@@ -1,4 +1,4 @@
-import 'package:flutter_corelib/network/auth/auth_info.dart';
+import 'package:flutter_corelib/prefs/auth_session.dart';
 import 'package:flutter_corelib/prefs/flutter_prefs.dart';
 import 'package:flutter_corelib/prefs/prefs.dart';
 import 'package:flutter_corelib/prefs/prefs_list.dart';

@@ -6,8 +6,13 @@ import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 
 import 'audio_channel.dart';
-import '../../network/dio_ext/dio_util.dart';
 import '../io/file_path.dart';
+
+/// Downloads [source] into [destinationPath] or throws on failure.
+typedef AudioFileDownloader = Future<void> Function(
+  Uri source,
+  String destinationPath,
+);
 
 class AudioFile {
   static final Logger _logger = Logger('AudioFile');
@@ -16,6 +21,7 @@ class AudioFile {
   final FileSource location;
   final String path;
   final String? downloadUrl;
+  final AudioFileDownloader? downloader;
   final AudioChannel<dynamic> channel;
   String? _resolvedLocalPath;
 
@@ -24,6 +30,7 @@ class AudioFile {
     required this.path,
     required this.channel,
     this.downloadUrl,
+    this.downloader,
   });
 
   Future<void> play() async {
@@ -68,6 +75,16 @@ class AudioFile {
   Future<bool> _downloadFile() async {
     final url = downloadUrl;
     if (url == null || url.trim().isEmpty) return false;
+    final source = Uri.tryParse(url);
+    if (source == null ||
+        (source.scheme != 'https' && source.scheme != 'http')) {
+      throw ArgumentError.value(url, 'downloadUrl', 'Invalid HTTP(S) URL');
+    }
+    final download = downloader;
+    if (download == null) {
+      _logger.warning('No AudioFileDownloader was provided for $source');
+      return false;
+    }
 
     final documents = await getApplicationDocumentsDirectory();
     final relativePath = p.normalize(path);
@@ -88,10 +105,9 @@ class AudioFile {
 
     final temporary = io.File('${file.path}.part');
     if (await temporary.exists()) await temporary.delete();
-    final dio = DioUtil.createDio();
     try {
-      final response = await dio.download(url, temporary.path);
-      if (response.statusCode != 200 || !await temporary.exists()) return false;
+      await download(source, temporary.path);
+      if (!await temporary.exists()) return false;
       if (await temporary.length() < fileTooSmallKb * 1024) {
         await temporary.delete();
         return false;
@@ -102,8 +118,6 @@ class AudioFile {
       _logger.warning('Audio download failed', error, stackTrace);
       if (await temporary.exists()) await temporary.delete();
       return false;
-    } finally {
-      dio.close(force: true);
     }
   }
 }
