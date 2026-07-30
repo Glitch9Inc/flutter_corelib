@@ -60,6 +60,30 @@ void main() {
     await channel.stop();
     expect(players.every((player) => player.disposed), isTrue);
   });
+
+  test('pausing keeps a completion-aware player available to resume', () async {
+    late _CompletionAwareFakePlayer player;
+    final channel = AudioChannel<_CompletionAwareFakePlayer>(
+      'test-resume',
+      defaultLoop: false,
+      playerBuilder: () => player = _CompletionAwareFakePlayer(),
+    );
+    await channel.init();
+
+    final playFuture = channel.play(FileSource.assetsDir, 'bgm.mp3');
+    await Future<void>.delayed(Duration.zero);
+    await channel.pause();
+    await playFuture;
+
+    expect(player.disposed, isFalse);
+    final resumeFuture = channel.resume();
+    await Future<void>.delayed(Duration.zero);
+    expect(player.playing, isTrue);
+
+    await channel.pause();
+    await resumeFuture;
+    await channel.stop();
+  });
 }
 
 class _FakePlayer with AudioChannelPlayer {
@@ -105,4 +129,46 @@ class _FakePlayer with AudioChannelPlayer {
 
   @override
   Future<void> stop() async => _playing = false;
+}
+
+class _CompletionAwareFakePlayer extends _FakePlayer
+    implements AudioChannelCompletion {
+  final _completed = StreamController<void>.broadcast();
+  Completer<void>? _playCompleter;
+
+  @override
+  Stream<void> get onCompleted => _completed.stream;
+
+  @override
+  Future<void> play() {
+    _playing = true;
+    _playCompleter = Completer<void>();
+    return _playCompleter!.future;
+  }
+
+  @override
+  Future<void> pause() async {
+    _playing = false;
+    _finishPlayWait();
+  }
+
+  @override
+  Future<void> resume() => play();
+
+  @override
+  Future<void> stop() async {
+    _playing = false;
+    _finishPlayWait();
+  }
+
+  @override
+  Future<void> dispose() async {
+    await _completed.close();
+    await super.dispose();
+  }
+
+  void _finishPlayWait() {
+    final completer = _playCompleter;
+    if (completer != null && !completer.isCompleted) completer.complete();
+  }
 }

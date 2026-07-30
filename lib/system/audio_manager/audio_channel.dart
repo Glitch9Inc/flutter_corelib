@@ -165,7 +165,7 @@ class AudioChannel<TAudioPlayer extends AudioChannelPlayer> {
       final shouldLoop = loop ?? defaultLoop;
       await player.setLoop(shouldLoop);
       await player.play();
-      if (!shouldLoop && !player.playing) {
+      if (!shouldLoop && player is! AudioChannelCompletion && !player.playing) {
         await _disposePlayer(player);
       }
     } on Object catch (error, stackTrace) {
