@@ -30,6 +30,7 @@ abstract interface class AudioChannelCompletion {
 class AudioChannel<TAudioPlayer extends AudioChannelPlayer> {
   static const double _defaultVolume = 1;
   static const int _defaultFadeOutDurationInMillis = 2000;
+  static const int _defaultMaxPlayers = 8;
 
   final String name;
   final bool defaultLoop;
@@ -37,11 +38,37 @@ class AudioChannel<TAudioPlayer extends AudioChannelPlayer> {
   final int fadeOutDurationInMillis;
   final bool allowAudioOverlap;
   final bool ignoreSameAudio;
+
+  /// Upper bound on players kept alive when [allowAudioOverlap] is enabled.
+  /// Once reached the oldest player is reclaimed, so a player that gets wedged
+  /// (never reports completion) can never starve the channel for good.
+  final int maxPlayers;
+
   final TAudioPlayer Function() playerBuilder;
   final Logger _logger;
 
-  late Prefs<double> _volume;
+  /// Created on first access, not in [init]: the volume has to be readable
+  /// before (or without) initialization — the settings UI and the lobby BGM
+  /// controller both read it while init is still in flight. Prefs.create is
+  /// synchronous, cached, and falls back to the default on failure.
+  late final Prefs<double> _volume =
+      Prefs.create<double>('${name}_volume', _defaultVolume);
+
   final List<TAudioPlayer> _players = <TAudioPlayer>[];
+
+  /// Players handed out by [_fetchPlayer] and not done with [play] yet. The
+  /// reservation is taken synchronously so two overlapping play() calls never
+  /// drive the same player.
+  final Set<TAudioPlayer> _busyPlayers = <TAudioPlayer>{};
+
+  /// Players that reported completion while still reserved; they are recycled
+  /// once their play() call returns instead of during its setup.
+  final Set<TAudioPlayer> _completedWhileBusy = <TAudioPlayer>{};
+
+  /// Recycled players waiting to be reused. They hold no playback, so
+  /// [pause]/[resume] must leave them alone — unlike a paused player.
+  final Set<TAudioPlayer> _idlePlayers = <TAudioPlayer>{};
+
   final Map<TAudioPlayer, StreamSubscription<void>> _completionSubscriptions =
       <TAudioPlayer, StreamSubscription<void>>{};
 
@@ -62,6 +89,7 @@ class AudioChannel<TAudioPlayer extends AudioChannelPlayer> {
     this.fadeOutDurationInMillis = _defaultFadeOutDurationInMillis,
     this.allowAudioOverlap = true,
     this.ignoreSameAudio = false,
+    this.maxPlayers = _defaultMaxPlayers,
   }) : _logger = Logger(name) {
     if (fadeOutDurationInMillis < 0) {
       throw ArgumentError.value(
@@ -70,13 +98,15 @@ class AudioChannel<TAudioPlayer extends AudioChannelPlayer> {
         'Must not be negative',
       );
     }
+    if (maxPlayers < 1) {
+      throw ArgumentError.value(maxPlayers, 'maxPlayers', 'Must be at least 1');
+    }
   }
 
   bool get playing => _players.any((player) => player.playing);
 
   Future<void> init() async {
     _isDisposed = false;
-    _volume = Prefs.create<double>('${name}_volume', _defaultVolume);
     await setVolume(_volume.value);
   }
 
@@ -100,10 +130,12 @@ class AudioChannel<TAudioPlayer extends AudioChannelPlayer> {
     await play(source, path, loop: _lastLoop);
   }
 
-  Future<void> pause() => Future.wait(_players.map((player) => player.pause()));
+  Future<void> pause() => Future.wait(_activePlayers.map((p) => p.pause()));
 
-  Future<void> resume() =>
-      Future.wait(_players.map((player) => player.resume()));
+  Future<void> resume() => Future.wait(_activePlayers.map((p) => p.resume()));
+
+  Iterable<TAudioPlayer> get _activePlayers =>
+      _players.where((player) => !_idlePlayers.contains(player));
 
   Future<void> stop() async {
     _fadeGeneration++;
@@ -165,8 +197,11 @@ class AudioChannel<TAudioPlayer extends AudioChannelPlayer> {
       final shouldLoop = loop ?? defaultLoop;
       await player.setLoop(shouldLoop);
       await player.play();
+      _busyPlayers.remove(player);
       if (!shouldLoop && player is! AudioChannelCompletion && !player.playing) {
         await _disposePlayer(player);
+      } else if (_completedWhileBusy.remove(player)) {
+        await _recyclePlayer(player);
       }
     } on Object catch (error, stackTrace) {
       _logger.severe(
@@ -176,6 +211,11 @@ class AudioChannel<TAudioPlayer extends AudioChannelPlayer> {
       );
       await _disposePlayer(player);
       rethrow;
+    } finally {
+      // A player that stays reserved would be skipped by every later fetch;
+      // one that stays in the pool while broken would swallow every later play.
+      _busyPlayers.remove(player);
+      _completedWhileBusy.remove(player);
     }
   }
 
@@ -187,24 +227,66 @@ class AudioChannel<TAudioPlayer extends AudioChannelPlayer> {
     }
 
     for (final player in _players) {
-      if (!player.playing) return player;
+      if (_busyPlayers.contains(player) || player.playing) continue;
+      // Reserve synchronously: overlapping play() calls that share a player
+      // abort each other's load and can leave it stuck and silent.
+      _busyPlayers.add(player);
+      _completedWhileBusy.remove(player);
+      _idlePlayers.remove(player);
+      return player;
+    }
+
+    if (_players.length >= maxPlayers) {
+      await _disposePlayer(_players.first);
     }
     return _createPlayer();
   }
 
   Future<TAudioPlayer> _createPlayer() async {
     final player = playerBuilder();
+    try {
+      await player.setVolume(getVolume());
+    } on Object {
+      // A half-initialized player must never enter the pool: it would be handed
+      // to every later play() call and silently drop every sound.
+      try {
+        await player.dispose();
+      } on Object catch (error, stackTrace) {
+        _logger.warning('Failed to dispose a broken player', error, stackTrace);
+      }
+      rethrow;
+    }
+
     _players.add(player);
-    await player.setVolume(getVolume());
+    _busyPlayers.add(player);
 
     if (player is AudioChannelCompletion) {
       final completionPlayer = player as AudioChannelCompletion;
       _completionSubscriptions[player] =
           completionPlayer.onCompleted.listen((_) {
-        unawaited(_disposePlayer(player));
+        // Completion can land while the player is being set up for its next
+        // sound; stopping it there would cut off the playback that is starting.
+        if (_busyPlayers.contains(player)) {
+          _completedWhileBusy.add(player);
+          return;
+        }
+        unawaited(_recyclePlayer(player));
       });
     }
     return player;
+  }
+
+  /// Returns a finished player to the pool instead of tearing it down, so the
+  /// channel does not build and drop a native player for every sound effect.
+  Future<void> _recyclePlayer(TAudioPlayer player) async {
+    if (!_players.contains(player)) return;
+    try {
+      await player.stop();
+      if (_players.contains(player)) _idlePlayers.add(player);
+    } on Object catch (error, stackTrace) {
+      _logger.warning('Failed to recycle player', error, stackTrace);
+      await _disposePlayer(player);
+    }
   }
 
   Future<void> _fadeOut(TAudioPlayer player, int generation) async {
@@ -227,6 +309,9 @@ class AudioChannel<TAudioPlayer extends AudioChannelPlayer> {
 
   Future<void> _disposePlayer(TAudioPlayer player) async {
     if (!_players.remove(player)) return;
+    _busyPlayers.remove(player);
+    _completedWhileBusy.remove(player);
+    _idlePlayers.remove(player);
     final subscription = _completionSubscriptions.remove(player);
     await subscription?.cancel();
     try {

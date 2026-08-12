@@ -39,8 +39,13 @@ abstract class BaseAudioManager<TAudioPlayer extends AudioChannelPlayer> {
 
   bool get isInit => _isInit;
   bool _isInit = false;
+  Future<void>? _initFuture;
 
-  Future<void> init() async {
+  /// Safe to call repeatedly: concurrent callers await the same initialization,
+  /// and a failed attempt can be retried.
+  Future<void> init() => _initFuture ??= _init();
+
+  Future<void> _init() async {
     try {
       final futures = [
         bgmChannel.init(),
@@ -52,6 +57,7 @@ abstract class BaseAudioManager<TAudioPlayer extends AudioChannelPlayer> {
 
       _isInit = true;
     } catch (e, stackTrace) {
+      _initFuture = null;
       Debug.severe('Failed to initialize audio',
           error: e, stackTrace: stackTrace);
       rethrow;
@@ -68,9 +74,13 @@ abstract class BaseAudioManager<TAudioPlayer extends AudioChannelPlayer> {
 
       await Future.wait(futures);
     } catch (e, stackTrace) {
-      _isInit = false;
       Debug.severe('Failed to dispose audio', error: e, stackTrace: stackTrace);
       rethrow;
+    } finally {
+      // Disposed channels reject every call until init() runs again, so the
+      // flags must drop on success too — not only in the failure path.
+      _isInit = false;
+      _initFuture = null;
     }
   }
 
